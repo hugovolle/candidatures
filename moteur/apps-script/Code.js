@@ -54,7 +54,8 @@ function notifier_(texte) {
   if (!url) { journal_('info', 'notification (pas de webhook)', texte); return; }
   const contenu = (prefixe + texte).slice(0, 1990);
   const r = UrlFetchApp.fetch(url, { method: 'post', contentType: 'application/json', payload: JSON.stringify({ content: contenu }), muteHttpExceptions: true });
-  if (r.getResponseCode() >= 300) journal_('erreur', 'Discord', r.getResponseCode() + ' ' + r.getContentText());
+  setProp_('DERNIER_DISCORD', iso_(new Date()) + ' HTTP ' + r.getResponseCode());
+  if (r.getResponseCode() >= 300) journal_('erreur', 'Discord', r.getResponseCode() + ' ' + r.getContentText().slice(0, 300));
 }
 
 function urlPage_() { try { return ScriptApp.getService().getUrl() || ''; } catch (e) { return ''; } }
@@ -239,6 +240,7 @@ function tick() {
     if (h >= '18:00' && !fait_('export_' + j)) { exporterSuivi_(); marquer_('export_' + j); }
     if (maintenant.getDay() === 1 && h >= '09:00' && !fait_('hebdo_' + j)) { publierBilanHebdo_(maintenant); marquer_('hebdo_' + j); }
     if (h >= '23:00' && !fait_('menage_' + j)) { menage_(); marquer_('menage_' + j); }
+    if (!fait_('diag_' + j + '_' + h.slice(0, 2))) { marquer_('diag_' + j + '_' + h.slice(0, 2)); try { diagnostiquer(); } catch (e) { journal_('erreur', 'diagnostic', e.message); } }
   } catch (e) {
     journal_('erreur', 'tick', e.stack || e.message);
     const cle = 'erreur_' + jour_() + '_' + hhmm_().slice(0, 2);
@@ -254,6 +256,49 @@ function menage_() {
     const m = /^fait_\w+?_(\d{4}-\d{2}-\d{2})/.exec(k);
     if (m && m[1] < limite) p.deleteProperty(k);
   });
+}
+
+// ---------- Diagnostic (lisible par Claude via GitHub) ----------
+
+/**
+ * État du moteur SANS aucun secret : quelles propriétés existent, si leur
+ * format est plausible, le dernier appel Discord et la fin du journal.
+ * Publié dans data/diagnostic.json (branche lots) pour qu'un diagnostic à
+ * distance soit possible sans ouvrir le Sheet.
+ */
+function etatMoteur_() {
+  const p = function (k) { return prop_(k, ''); };
+  const v = feuille_(ONGLET.journal).getDataRange().getValues();
+  return {
+    genere_le: iso_(new Date()), mode: p('MODE') || 'simulation',
+    proprietes: {
+      GITHUB_DEPOT: p('GITHUB_DEPOT'), LIEN_ROUTINE: !!p('LIEN_ROUTINE'),
+      GITHUB_TOKEN: p('GITHUB_TOKEN') ? (/^(github_pat_|ghp_)/.test(p('GITHUB_TOKEN')) ? 'présent, format GitHub' : 'présent, FORMAT INATTENDU') : 'absent',
+      DISCORD_WEBHOOK: p('DISCORD_WEBHOOK') ? (/^https:\/\/(ptb\.|canary\.)?discord(app)?\.com\/api\/webhooks\/\d+\/[\w-]+$/.test(p('DISCORD_WEBHOOK').trim()) ? 'présent, format webhook' : 'présent, FORMAT INATTENDU (pas une URL de webhook)') : 'absent',
+      URL_PORTFOLIO: p('URL_PORTFOLIO') ? (/^https:\/\//.test(p('URL_PORTFOLIO')) ? 'présent' : 'présent, FORMAT INATTENDU') : 'absent',
+      autres: Object.keys(PropertiesService.getScriptProperties().getProperties()).filter(function (k) { return !/^fait_/.test(k) && ['MODE', 'GITHUB_DEPOT', 'LIEN_ROUTINE', 'GITHUB_TOKEN', 'DISCORD_WEBHOOK', 'URL_PORTFOLIO', 'DERNIER_DISCORD', 'DATE_DEBUT', 'DIAG_EMPREINTE'].indexOf(k) < 0; }),
+    },
+    dernier_discord: p('DERNIER_DISCORD') || 'jamais',
+    declencheurs: ScriptApp.getProjectTriggers().map(function (t) { return t.getHandlerFunction(); }),
+    approches: lignes_().length,
+    journal: v.slice(Math.max(1, v.length - 25)).map(function (r) { return [r[0], r[1], r[2], String(r[3]).replace(/https:\/\/discord[^\s]+/g, '[webhook]').slice(0, 400)]; }),
+  };
+}
+
+/** Publie le diagnostic s'il a changé. Appelé chaque heure par tick, ou à la main. */
+function diagnostiquer() {
+  const etat = etatMoteur_();
+  const empreinte = JSON.stringify([etat.proprietes, etat.dernier_discord, etat.journal.slice(-5), etat.approches]);
+  if (empreinte === prop_('DIAG_EMPREINTE', '')) return 'Diagnostic inchangé.';
+  ecrireDepot_('data/diagnostic.json', 'lots', JSON.stringify(etat, null, 2), 'Diagnostic du moteur');
+  setProp_('DIAG_EMPREINTE', empreinte);
+  return etat;
+}
+
+/** Envoie un message de test sur Discord et publie le diagnostic. */
+function testerDiscord() {
+  notifier_('✅ Moteur candidatures connecté à Discord.');
+  return diagnostiquer();
 }
 
 // ---------- Lot du jour ----------
