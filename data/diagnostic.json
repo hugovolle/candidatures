@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-11-04T18:43:53",
+  "genere_le": "2026-11-04T19:01:19",
   "mode": "simulation",
   "proprietes": {
     "GITHUB_DEPOT": "hugovolle/candidatures",
@@ -7,10 +7,12 @@
     "GITHUB_TOKEN": "présent, format GitHub",
     "DISCORD_WEBHOOK": "présent, format webhook",
     "URL_PORTFOLIO": "absent",
-    "autres": []
+    "autres": [
+      "DERNIER_EMAIL_ALERTE"
+    ]
   },
-  "dernier_discord": "2026-11-04T18:43:52 HTTP 204",
-  "dernier_email_alerte": "2026-11-04T18:41:15",
+  "dernier_discord": "2026-11-04T18:56:15 HTTP 204",
+  "messages_discord_en_attente": 0,
   "declencheurs": [
     "tick"
   ],
@@ -51,6 +53,12 @@
       "erreur",
       "Discord",
       "429 error code: 1015\n"
+    ],
+    [
+      "2026-11-04T18:56:14.000Z",
+      "info",
+      "import 2026-11-04",
+      "0 à valider, 0 refusée(s) par le code"
     ]
   ]
 }
