@@ -1,0 +1,49 @@
+{
+  "genere_le": "2026-11-04T18:36:16",
+  "mode": "simulation",
+  "proprietes": {
+    "GITHUB_DEPOT": "hugovolle/candidatures",
+    "LIEN_ROUTINE": true,
+    "GITHUB_TOKEN": "présent, format GitHub",
+    "DISCORD_WEBHOOK": "présent, format webhook",
+    "URL_PORTFOLIO": "absent",
+    "autres": []
+  },
+  "dernier_discord": "jamais",
+  "declencheurs": [
+    "tick"
+  ],
+  "approches": 1,
+  "journal": [
+    [
+      "2026-11-04T17:57:28.000Z",
+      "info",
+      "installation",
+      "Déclencheur toutes les 5 min créé. Mode : simulation. Propriétés manquantes : GITHUB_TOKEN, DISCORD_WEBHOOK, URL_PORTFOLIO"
+    ],
+    [
+      "2026-11-04T18:01:14.000Z",
+      "info",
+      "notification (pas de webhook)",
+      "⏰ Le lot du 2026-11-04 n'est pas encore prêt à 9h30. La routine a peut-être échoué.\nRelancer : https://claude.ai/code/routines/trig_01D1JZ7fL44yia5QBF5S3xgY (bouton « Run now »)"
+    ],
+    [
+      "2026-11-04T18:01:17.000Z",
+      "info",
+      "notification (pas de webhook)",
+      "📊 Bilan du 2026-11-04 : 0 envoyé(s), 0 relance(s), 0 réponse(s)\nDepuis le début : 0 approche(s), 0 réponse(s) positive(s)."
+    ],
+    [
+      "2026-11-04T18:30:22.000Z",
+      "info",
+      "import 2026-11-04",
+      "1 à valider, 0 refusée(s) par le code (exemple)"
+    ],
+    [
+      "2026-11-04T18:30:23.000Z",
+      "erreur",
+      "Discord",
+      "429 error code: 1015\n"
+    ]
+  ]
+}
