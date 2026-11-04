@@ -62,13 +62,16 @@ function monde(options) {
   depot.main['data/liste_noire.txt'] = lireFichier('data/liste_noire.txt');
   depot.main['data/deja_contactes.txt'] = lireFichier('data/deja_contactes.txt');
   depot.main['infra/exemple_lot.json'] = lireFichier('infra/exemple_lot.json');
-  const discord = [];
+  const discord = [], cartes = [];
   const reponse = (code, corps) => ({ getResponseCode: () => code, getContentText: () => corps });
   const UrlFetchApp = { fetch: (url, o) => {
     o = o || {};
     if (url.startsWith('https://discord.test')) {
       if (etat.discordCode) return reponse(etat.discordCode, 'error code: 1015');
-      discord.push(JSON.parse(o.payload).content); return reponse(204, '');
+      const c = JSON.parse(o.payload), e = (c.embeds || [])[0] || {};
+      cartes.push(c);
+      discord.push([c.content, e.title, e.description, (e.fields || []).map((f) => f.name + ' ' + f.value).join(' '), e.footer && e.footer.text].filter(Boolean).join('\n'));
+      return reponse(204, '');
     }
     const m = /contents\/([^?]+)(?:\?ref=(.+))?$/.exec(url);
     if (o.method === 'put') { const b = JSON.parse(o.payload); depot[b.branch][m[1]] = Buffer.from(b.content, 'base64').toString('utf8'); return reponse(200, '{}'); }
@@ -110,7 +113,7 @@ function monde(options) {
   vm.runInContext(lireFichier('moteur/regles.js') + '\n' + lireFichier('moteur/apps-script/Code.js'), ctx);
 
   return {
-    ctx, feuilles, proprietes, depot, discord, envoyes, fils, alertesEmail, etat,
+    ctx, feuilles, proprietes, depot, discord, cartes, envoyes, fils, alertesEmail, etat,
     allerA: (h, m, jour) => { maintenant = new RealDate(2026, 10, jour || 4, h, m); },
     /** Fait tourner tick() toutes les 5 minutes entre deux heures. */
     derouler: function (h1, m1, h2, m2, jour) {
@@ -144,8 +147,12 @@ test('journée type en simulation : import 10h10, validation, envois étalés, b
   w.derouler(10, 10, 10, 10);
   assert.equal(w.lignes().length, 5);
   assert.ok(w.lignes().every((l) => l.statut === 'a_valider'));
-  assert.ok(w.discord.some((d) => d.includes('5 approche(s) à valider')));
-  assert.ok(w.discord.every((d) => d.startsWith('🧪 [SIMULATION]')));
+  const carte = w.cartes.find((c) => c.embeds[0].title === '📬 5 approches à valider');
+  assert.ok(carte, 'carte du lot');
+  assert.equal(carte.embeds[0].fields.length, 5, 'un champ par approche');
+  assert.equal(carte.embeds[0].url, 'https://script.google.test/page', 'le titre ouvre la page de validation');
+  assert.ok(w.cartes.every((c) => c.embeds[0].footer.text.includes('Simulation')));
+  assert.ok(JSON.stringify(w.cartes).length < 6000 * w.cartes.length, 'sous la limite Discord');
 
   w.ctx.toutValider();
   w.derouler(10, 15, 17, 0);
@@ -161,7 +168,7 @@ test('journée type en simulation : import 10h10, validation, envois étalés, b
     if (i) assert.ok((heures[i] - heures[i - 1]) / 60000 >= 10, 'envois trop rapprochés');
   }
   w.derouler(17, 5, 18, 5);
-  assert.ok(w.discord.some((d) => d.includes('Bilan du 2026-11-04')));
+  assert.ok(w.discord.some((d) => d.includes('Bilan du mercredi 4 novembre')));
   assert.ok(w.depot.lots['data/suivi_export.json'], 'export du suivi poussé sur la branche lots');
 });
 
@@ -169,7 +176,7 @@ test('lot absent à 9h30 : alerte, puis import quand il arrive', () => {
   const w = monde({ proprietes: { LIEN_ROUTINE: 'https://claude.ai/code/routines/x' } });
   w.ctx.installer();
   w.derouler(9, 0, 9, 35);
-  assert.ok(w.discord.some((d) => d.includes('pas encore prêt') && d.includes('routines/x')));
+  assert.ok(w.discord.some((d) => d.includes('pas prêt') && d.includes('routines/x')));
   w.derouler(9, 40, 10, 20);
   assert.equal(w.lignes().length, 0);
   lotDuJour(w, 2);
@@ -191,7 +198,7 @@ test('garde-fous à l\'import : liste noire, motif interdit, doublon', () => {
   assert.equal(l[2].statut, 'a_valider');
   w.derouler(10, 15, 10, 15);
   assert.equal(w.lignes().length, 3, 'un lot relu n\'est jamais réimporté');
-  assert.equal(w.discord.filter((d) => d.includes('Lot du')).length, 1, 'une seule notification pour un même lot');
+  assert.equal(w.discord.filter((d) => d.includes('à valider') && d.startsWith('📬')).length, 1, 'une seule notification pour un même lot');
 });
 
 test('sans lien de portfolio, rien ne part même en mode réel', () => {
@@ -264,6 +271,7 @@ test('Discord refuse (429 / 1015) : le message attend et part au passage suivant
   w.etat.discordCode = 0;
   w.derouler(10, 15, 10, 15);
   assert.ok(w.discord.some((d) => d.includes('à valider') && d.includes('retardé par Discord')));
+  assert.equal(Object.keys(w.proprietes).filter((k) => k.startsWith('DISCORD_Q_')).length, 0, 'file vidée');
 });
 
 test('candidature sur offre publiée : validée, à déposer à la main, jamais envoyée par email', () => {

@@ -48,43 +48,70 @@ function journal_(niveau, evenement, detail) {
   feuille_(ONGLET.journal).appendRow([iso_(new Date()), niveau, evenement, String(detail || '').slice(0, 45000)]);
 }
 
+// ---------- Discord : des cartes lisibles en un coup d'œil ----------
+
+const COULEUR = { info: 0x2C4A9B, succes: 0x1F6F43, attention: 0xC77700, erreur: 0x9B2C1F, neutre: 0x6F6B64, chaud: 0xE8590C };
+const JOURS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+const MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+function dateLongue_(j) { const d = new Date(j + 'T12:00:00'); return JOURS[d.getDay()] + ' ' + d.getDate() + ' ' + MOIS[d.getMonth()]; }
+function coupe_(s, n) { s = String(s || ''); return s.length > n ? s.slice(0, n - 1) + '…' : s; }
+
+/**
+ * Construit le message Discord d'une carte :
+ * { titre, texte, couleur, champs: [{ nom, valeur, ligne }], lien, pied }.
+ */
+function charge_(carte) {
+  if (typeof carte === 'string') carte = { texte: carte, couleur: COULEUR.neutre };
+  const pied = [modeReel_() ? '' : '🧪 Simulation : rien n\'est envoyé', carte.pied || ''].filter(Boolean).join(' · ');
+  const e = { color: carte.couleur || COULEUR.info, timestamp: new Date().toISOString() };
+  if (carte.titre) e.title = coupe_(carte.titre, 250);
+  if (carte.texte) e.description = coupe_(carte.texte, 3900);
+  if (carte.lien) e.url = carte.lien;
+  if (carte.champs && carte.champs.length) e.fields = carte.champs.slice(0, 20).map(function (c) { return { name: coupe_(c.nom, 250), value: coupe_(c.valeur || '—', 1000), inline: !!c.ligne }; });
+  if (pied) e.footer = { text: coupe_(pied, 2000) };
+  return { username: 'Candidatures', embeds: [e] };
+}
+
 /**
  * Prévient Hugo sur Discord, et uniquement sur Discord (choix de Hugo : pas
  * d'alertes par email). Discord bloque parfois les serveurs de Google
  * (erreur 429 / 1015) : le message est alors mis en file et renvoyé à chaque
  * passage, dans l'ordre, jusqu'à ce qu'il passe. Rien ne se perd.
  */
-function notifier_(texte) {
-  const prefixe = modeReel_() ? '' : '🧪 [SIMULATION] ';
-  const file = fileDiscord_();
-  file.push({ t: hhmm_(), c: (prefixe + texte).slice(0, 1900) });
-  setProp_('FILE_DISCORD', JSON.stringify(file.slice(-30)));
+function notifier_(carte) {
+  const p = PropertiesService.getScriptProperties();
+  const cle = 'DISCORD_Q_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+  p.setProperty(cle, JSON.stringify({ t: hhmm_(), charge: charge_(carte) }).slice(0, 8900));
+  const cles = clesFile_();
+  cles.slice(0, Math.max(0, cles.length - 30)).forEach(function (k) { p.deleteProperty(k); });
   viderFileDiscord_();
 }
 
-function fileDiscord_() {
-  try { return JSON.parse(prop_('FILE_DISCORD', '[]')); } catch (e) { return []; }
+function clesFile_() {
+  return Object.keys(PropertiesService.getScriptProperties().getProperties()).filter(function (k) { return /^DISCORD_Q_/.test(k); }).sort();
 }
 
 /** Envoie les messages en attente, du plus ancien au plus récent ; s'arrête au premier refus. */
 function viderFileDiscord_() {
-  const url = prop_('DISCORD_WEBHOOK', '');
-  let file = fileDiscord_();
-  if (!url || !file.length) return;
-  while (file.length) {
-    const m = file[0];
-    const retard = m.t !== hhmm_() ? ' _(message de ' + m.t + ', retardé par Discord)_' : '';
+  const url = prop_('DISCORD_WEBHOOK', ''), p = PropertiesService.getScriptProperties();
+  if (!url) return;
+  for (const k of clesFile_()) {
+    let m;
+    try { m = JSON.parse(p.getProperty(k)); } catch (e) { p.deleteProperty(k); continue; }
+    if (m.t !== hhmm_() && m.charge.embeds && m.charge.embeds[0]) {
+      const f = m.charge.embeds[0].footer || { text: '' };
+      f.text = (f.text ? f.text + ' · ' : '') + 'envoyé à ' + m.t + ', retardé par Discord';
+      m.charge.embeds[0].footer = f;
+    }
     let code;
-    try {
-      code = UrlFetchApp.fetch(url, { method: 'post', contentType: 'application/json', payload: JSON.stringify({ content: (m.c + retard).slice(0, 1990) }), muteHttpExceptions: true }).getResponseCode();
-    } catch (e) { code = 0; }
+    try { code = UrlFetchApp.fetch(url, { method: 'post', contentType: 'application/json', payload: JSON.stringify(m.charge), muteHttpExceptions: true }).getResponseCode(); } catch (e) { code = 0; }
     setProp_('DERNIER_DISCORD', iso_(new Date()) + ' HTTP ' + code);
     if (code >= 300 || code === 0) {
-      if (!fait_('discord_refus_' + jour_() + '_' + hhmm_().slice(0, 2))) { marquer_('discord_refus_' + jour_() + '_' + hhmm_().slice(0, 2)); journal_('erreur', 'Discord', 'HTTP ' + code + ', ' + file.length + ' message(s) en attente, nouvel essai dans 5 min'); }
-      break;
+      const marque = 'discord_refus_' + jour_() + '_' + hhmm_().slice(0, 2);
+      if (!fait_(marque)) { marquer_(marque); journal_('erreur', 'Discord', 'HTTP ' + code + ', ' + clesFile_().length + ' message(s) en attente, nouvel essai dans 5 min'); }
+      return;
     }
-    file = file.slice(1);
-    setProp_('FILE_DISCORD', JSON.stringify(file));
+    p.deleteProperty(k);
   }
 }
 
@@ -282,11 +309,15 @@ function tick() {
     if (h >= '18:00' && !fait_('export_' + j)) { exporterSuivi_(); marquer_('export_' + j); }
     if (maintenant.getDay() === 1 && h >= '09:00' && !fait_('hebdo_' + j)) { publierBilanHebdo_(maintenant); marquer_('hebdo_' + j); }
     if (h >= '23:00' && !fait_('menage_' + j)) { menage_(); marquer_('menage_' + j); }
+    if (!fait_('apercu_cartes_v1')) { marquer_('apercu_cartes_v1'); PropertiesService.getScriptProperties().deleteProperty('FILE_DISCORD'); notifier_({ titre: '✨ Nouvelle présentation des notifications', couleur: COULEUR.succes, lien: urlPage_() || undefined,
+      texte: 'Chaque matin, une carte comme celle-ci te présente le lot du jour. Un clic sur le titre ouvre ta page de validation.',
+      champs: [{ nom: '📬 Bleu', valeur: 'Lot du jour à valider', ligne: true }, { nom: '🔥 Orange', valeur: 'Réponse positive', ligne: true }, { nom: '⏰ Ambre', valeur: 'Action ou alerte', ligne: true }, { nom: '🛑 Rouge', valeur: 'Blocage ou erreur', ligne: true }, { nom: '📊 Vert', valeur: 'Bilan, rien à faire', ligne: true }],
+      pied: '✉️ email  📝 candidature  💼 LinkedIn' }); }
     if (!fait_('diag_' + j + '_' + h.slice(0, 2))) { marquer_('diag_' + j + '_' + h.slice(0, 2)); try { diagnostiquer(); } catch (e) { journal_('erreur', 'diagnostic', e.message); } }
   } catch (e) {
     journal_('erreur', 'tick', e.stack || e.message);
     const cle = 'erreur_' + jour_() + '_' + hhmm_().slice(0, 2);
-    if (!fait_(cle)) { notifier_('⚠️ Erreur du moteur : ' + e.message); marquer_(cle); }
+    if (!fait_(cle)) { notifier_({ titre: '⚠️ Erreur du moteur', texte: '```' + coupe_(e.message, 1500) + '```\nLe détail est dans l\'onglet Journal du Sheet. Claude peut le lire dans le diagnostic.', couleur: COULEUR.erreur }); marquer_(cle); }
   } finally {
     verrou.releaseLock();
   }
@@ -318,10 +349,10 @@ function etatMoteur_() {
       GITHUB_TOKEN: p('GITHUB_TOKEN') ? (/^(github_pat_|ghp_)/.test(p('GITHUB_TOKEN')) ? 'présent, format GitHub' : 'présent, FORMAT INATTENDU') : 'absent',
       DISCORD_WEBHOOK: p('DISCORD_WEBHOOK') ? (/^https:\/\/(ptb\.|canary\.)?discord(app)?\.com\/api\/webhooks\/\d+\/[\w-]+$/.test(p('DISCORD_WEBHOOK').trim()) ? 'présent, format webhook' : 'présent, FORMAT INATTENDU (pas une URL de webhook)') : 'absent',
       URL_PORTFOLIO: p('URL_PORTFOLIO') ? (/^https:\/\//.test(p('URL_PORTFOLIO')) ? 'présent' : 'présent, FORMAT INATTENDU') : 'absent',
-      autres: Object.keys(PropertiesService.getScriptProperties().getProperties()).filter(function (k) { return !/^fait_/.test(k) && ['MODE', 'GITHUB_DEPOT', 'LIEN_ROUTINE', 'GITHUB_TOKEN', 'DISCORD_WEBHOOK', 'URL_PORTFOLIO', 'DERNIER_DISCORD', 'FILE_DISCORD', 'DATE_DEBUT', 'DIAG_EMPREINTE'].indexOf(k) < 0; }),
+      autres: Object.keys(PropertiesService.getScriptProperties().getProperties()).filter(function (k) { return !/^(fait_|DISCORD_Q_|LOT_IMPORTE_)/.test(k) && ['MODE', 'GITHUB_DEPOT', 'LIEN_ROUTINE', 'GITHUB_TOKEN', 'DISCORD_WEBHOOK', 'URL_PORTFOLIO', 'DERNIER_DISCORD', 'FILE_DISCORD', 'DATE_DEBUT', 'DIAG_EMPREINTE'].indexOf(k) < 0; }),
     },
     dernier_discord: p('DERNIER_DISCORD') || 'jamais',
-    messages_discord_en_attente: fileDiscord_().length,
+    messages_discord_en_attente: clesFile_().length,
     declencheurs: ScriptApp.getProjectTriggers().map(function (t) { return t.getHandlerFunction(); }),
     approches: lignes_().length,
     journal: v.slice(Math.max(1, v.length - 25)).map(function (r) { return [r[0], r[1], r[2], String(r[3]).replace(/https:\/\/discord[^\s]+/g, '[webhook]').slice(0, 400)]; }),
@@ -340,7 +371,7 @@ function diagnostiquer() {
 
 /** Envoie un message de test sur Discord et publie le diagnostic. */
 function testerDiscord() {
-  notifier_('✅ Moteur candidatures connecté à Discord.');
+  notifier_({ titre: '✅ Moteur connecté', texte: 'Les notifications de la recherche de poste arriveront dans ce salon.', couleur: COULEUR.succes });
   return diagnostiquer();
 }
 
@@ -349,7 +380,7 @@ function testerDiscord() {
 function controlerLot_(j) {
   if (lireDepot_('data/lots/' + j + '.json', 'lots') !== null) return;
   const lien = prop_('LIEN_ROUTINE', '');
-  notifier_('⏰ Le lot du ' + j + ' n\'est pas encore prêt à 9h30. La routine a peut-être échoué.' + (lien ? '\nRelancer : ' + lien + ' (bouton « Run now »)' : ''));
+  notifier_({ titre: '⏰ Le lot du jour n\'est pas prêt', texte: 'À 9h30, la routine du matin n\'a encore rien déposé. Elle a peut-être échoué.' + (lien ? '\n\n**[Relancer la routine](' + lien + ')** (bouton « Run now »)' : ''), couleur: COULEUR.attention, lien: lien || undefined });
 }
 
 function importerLot_(j) {
@@ -359,7 +390,7 @@ function importerLot_(j) {
   if (prop_('LOT_IMPORTE_' + j, '') === empreinte) return true;
   setProp_('LOT_IMPORTE_' + j, empreinte);
   let lot;
-  try { lot = JSON.parse(txt); } catch (e) { notifier_('⚠️ Lot du ' + j + ' illisible (JSON invalide). Rien n\'est importé.'); return true; }
+  try { lot = JSON.parse(txt); } catch (e) { notifier_({ titre: '⚠️ Lot illisible', texte: 'Le lot du ' + dateLongue_(j) + ' n\'est pas un JSON valide. Rien n\'est importé.', couleur: COULEUR.erreur }); return true; }
   importerDonneesLot_(lot, false);
   return true;
 }
@@ -388,8 +419,20 @@ function importerDonneesLot_(lot, exemple) {
   });
   journal_('info', 'import ' + lot.date, ok + ' à valider, ' + refusees + ' refusée(s) par le code' + (exemple ? ' (exemple)' : ''));
   const lien = urlPage_();
-  if (!(lot.approches || []).length) notifier_('📭 Lot du ' + lot.date + ' vide. ' + (lot.resume || ''));
-  else notifier_('📬 Lot du ' + lot.date + ' : **' + ok + ' approche(s) à valider**' + (refusees ? ', ' + refusees + ' bloquée(s) par les garde-fous' : '') + '.\n' + (lot.resume || '') + (lien ? '\n👉 ' + lien : ''));
+  const icones = { email: '✉️', candidature: '📝', linkedin: '💼' };
+  if (!(lot.approches || []).length) {
+    notifier_({ titre: '📭 Pas d\'approche ' + (dateLongue_(lot.date).startsWith('lundi') ? 'ce lundi' : 'aujourd\'hui'), texte: coupe_(lot.resume || '', 900) + ((lot.alertes || []).length ? '\n\n**À savoir**\n' + lot.alertes.slice(0, 4).map(function (x) { return '• ' + coupe_(x, 220); }).join('\n') : ''), couleur: COULEUR.neutre, pied: dateLongue_(lot.date) });
+  } else {
+    const champs = (lot.approches || []).filter(function (a, i) { return a && !res.approches[i].erreurs.length; }).slice(0, 10).map(function (a) {
+      const p = a.personne || {};
+      return { nom: a.poste + ' · ' + (a.intitule_vise || '') + '  —  ' + a.entreprise,
+        valeur: [(p.prenom ? p.prenom + ' ' + p.nom + (p.poste ? ', ' + p.poste : '') : 'Candidature sur l\'offre'), a.score + '/100 · ' + (a.canal || []).map(function (c) { return icones[c] || c; }).join(' ')].join('\n') + '\n_' + coupe_(a.signal, 160) + '_' };
+    });
+    notifier_({ titre: '📬 ' + ok + ' approche' + (ok > 1 ? 's' : '') + ' à valider', lien: lien || undefined,
+      texte: (lien ? '**[Ouvrir ma page de validation](' + lien + ')**\n\n' : '') + coupe_(lot.resume || '', 600),
+      champs: champs, couleur: COULEUR.info,
+      pied: dateLongue_(lot.date) + (refusees ? ' · ' + refusees + ' bloquée(s) par les garde-fous' : '') + ' · ✉️ email  📝 candidature  💼 LinkedIn' });
+  }
 }
 
 // ---------- Page de validation ----------
@@ -556,7 +599,7 @@ function envoyerPremier_(l, conf) {
   if (err.length) {
     maj_(l._ligne, { statut: 'refusee_code', erreurs_code: err.join(' ; ') });
     journal_('alerte', 'envoi bloqué', l.id + ' : ' + err.join(' ; '));
-    notifier_('🛑 Envoi bloqué par les garde-fous : ' + l.entreprise + '\n' + err.join('\n'));
+    notifier_({ titre: '🛑 Envoi bloqué : ' + l.entreprise, texte: 'Les garde-fous ont arrêté cet email juste avant l\'envoi :\n' + err.slice(0, 8).map(function (x) { return '• ' + x; }).join('\n'), couleur: COULEUR.erreur });
     return;
   }
   const texte = Regles.texteFinal(a.message.corps, url, SIGNATURE);
@@ -623,15 +666,22 @@ function releverReponses_() {
     feuille_(ONGLET.reponses).appendRow([iso_(reponse.getDate()), l.id, l.entreprise, l.email, classe, extrait]);
     if (classe === 'stop') { ajouterListeNoire_(l.email, 'opposition'); ajouterListeNoire_(l.domaine, 'opposition'); }
     if (classe === 'refus') ajouterListeNoire_(l.domaine, 'refus');
-    const icone = { positif: '🔥', a_lire: '📩', refus: '🙅', stop: '⛔' }[classe] || '📩';
-    notifier_(icone + ' Réponse de **' + l.prenom + ' ' + l.nom + '** (' + l.entreprise + ') : ' + classe + '\n> ' + extrait.slice(0, 300).replace(/\n/g, '\n> ') + '\nC\'est à toi de répondre, depuis Gmail.');
+    const style = {
+      positif: { t: '🔥 Réponse positive', c: COULEUR.chaud },
+      a_lire: { t: '📩 Nouvelle réponse', c: COULEUR.info },
+      refus: { t: '🙅 Refus', c: COULEUR.neutre },
+      stop: { t: '⛔ Demande de ne plus être contacté', c: COULEUR.erreur },
+    }[classe] || { t: '📩 Nouvelle réponse', c: COULEUR.info };
+    const fil = 'https://mail.google.com/mail/u/0/#inbox/' + l.thread_id;
+    notifier_({ titre: style.t + ' — ' + l.prenom + ' ' + l.nom + ' (' + l.entreprise + ')', lien: fil, couleur: style.c,
+      texte: '> ' + coupe_(extrait, 700).replace(/\n/g, '\n> ') + '\n\n' + (classe === 'positif' || classe === 'a_lire' ? '**[Répondre depuis Gmail](' + fil + ')** : c\'est à toi de jouer.' : (classe === 'stop' ? 'Ajouté à la liste noire, plus jamais recontacté.' : 'Entreprise ajoutée à la liste noire. Pas de relance.')) });
   });
   // Rebonds : adresses invalides.
   GmailApp.search('from:(mailer-daemon OR postmaster) newer_than:3d', 0, 20).forEach(function (t) {
     const texte = t.getMessages().map(function (m) { return m.getPlainBody(); }).join('\n').toLowerCase();
     lignes_().filter(function (l) { return l.statut === 'envoyee' && l.email && texte.indexOf(String(l.email).toLowerCase()) >= 0; }).forEach(function (l) {
       maj_(l._ligne, { statut: 'invalide', reponse_classe: 'rebond' });
-      notifier_('↩️ Adresse invalide : ' + l.email + ' (' + l.entreprise + '). À retenir pour l\'enquêteur.');
+      notifier_({ titre: '↩️ Adresse invalide', texte: l.email + ' (' + l.entreprise + ') a rebondi. L\'analyste en tiendra compte.', couleur: COULEUR.attention });
     });
   });
 }
@@ -647,15 +697,23 @@ function bilanDuJour_(j) {
   const attente = ls.filter(function (l) { return l.statut === 'a_valider'; }).length;
   const reportes = ls.filter(function (l) { return l.statut === 'validee'; }).length;
   const bloques = ls.filter(function (l) { return l.statut === 'refusee_code' && String(l.date_lot).slice(0, 10) === j; }).length;
-  const li = ls.filter(function (l) { return String(l.canal).indexOf('linkedin') >= 0 && ['validee', 'planifiee', 'envoyee', 'linkedin_seul'].indexOf(l.statut) >= 0 && l.linkedin_statut !== 'message'; }).length;
+  const actif = function (l) { return ['validee', 'planifiee', 'envoyee', 'linkedin_seul'].indexOf(l.statut) >= 0; };
+  const li = ls.filter(function (l) { return actif(l) && ((String(l.canal).indexOf('linkedin') >= 0 && l.linkedin_statut !== 'message') || (String(l.canal).indexOf('candidature') >= 0 && l.candidature_statut !== 'deposee')); }).length;
   const total = ls.filter(function (l) { return l.envoye_le; }).length;
   const positifs = ls.filter(function (l) { return l.reponse_classe === 'positif'; }).length;
-  notifier_('📊 Bilan du ' + j + ' : ' + envoyes + ' envoyé(s), ' + relances + ' relance(s), ' + reponses.length + ' réponse(s)' +
-    (attente ? '\n• ' + attente + ' approche(s) encore à valider' : '') +
-    (reportes ? '\n• ' + reportes + ' validée(s) reportée(s) à demain' : '') +
-    (bloques ? '\n• ' + bloques + ' bloquée(s) par les garde-fous' : '') +
-    (li ? '\n• ' + li + ' action(s) LinkedIn à faire' : '') +
-    '\nDepuis le début : ' + total + ' approche(s), ' + positifs + ' réponse(s) positive(s).');
+  const lien = urlPage_();
+  const aFaire = attente + li;
+  notifier_({ titre: '📊 Bilan du ' + dateLongue_(j), couleur: aFaire ? COULEUR.attention : COULEUR.succes, lien: lien || undefined,
+    texte: aFaire ? '**Il te reste ' + aFaire + ' action' + (aFaire > 1 ? 's' : '') + '.**' + (lien ? ' [Ouvrir ma page](' + lien + ')' : '') : 'Rien en attente de ton côté.',
+    champs: [
+      { nom: 'Envoyés', valeur: String(envoyes), ligne: true },
+      { nom: 'Relances', valeur: String(relances), ligne: true },
+      { nom: 'Réponses', valeur: String(reponses.length), ligne: true },
+      { nom: 'À valider', valeur: String(attente), ligne: true },
+      { nom: 'Actions à la main', valeur: String(li), ligne: true },
+      { nom: 'Reportés à demain', valeur: String(reportes), ligne: true },
+    ].concat(bloques ? [{ nom: 'Bloqués par les garde-fous', valeur: String(bloques) }] : []),
+    pied: 'Depuis le début : ' + total + ' approche(s), ' + positifs + ' réponse(s) positive(s)' });
 }
 
 function exporterSuivi_() {
@@ -678,5 +736,5 @@ function exporterSuivi_() {
 function publierBilanHebdo_(maintenant) {
   const dimanche = new Date(maintenant.getTime() - 86400000);
   const txt = lireDepot_('data/bilans/' + jour_(dimanche) + '.md', 'lots');
-  if (txt) notifier_('🗓️ Bilan de la semaine\n' + txt.slice(0, 1800));
+  if (txt) notifier_({ titre: '🗓️ Bilan de la semaine', texte: coupe_(txt, 3800), couleur: COULEUR.info });
 }
