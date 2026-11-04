@@ -1,0 +1,42 @@
+{
+  "date": "2026-11-04",
+  "genere_a": "2026-11-04T19:10:01+01:00",
+  "version_format": 1,
+  "taille_visee": 3,
+  "resume": "Lot vide. 5 candidates examinées (gisement maigre), 4 enquêtées, 1 seule retenue par le stratège (Alan, 73/100) puis rejetée par le censeur (7/10). Aucune approche ne passe les seuils : rien à valider aujourd'hui.",
+  "approches": [],
+  "ecartees": [
+    {
+      "entreprise": "Alan",
+      "motif": "censeur : rejeté (7/10). L'offre Senior Brand Designer exige d'être basé à Paris, Marseille, Bordeaux, Madrid, Bruxelles ou Barcelone (Lyon absent, télétravail à discuter avec le lead). Source Option Finance sur la campagne Mbappé illisible (403), lien de cause à effet campagne/offre inventé (offre du 28/08 antérieure à la campagne du 05/10), intitulé hors priorités A/B, fourchette salariale D+ non vérifiée. https://jobs.ashbyhq.com/alan/f2b0e267-18c4-49ba-beb7-c09b2a48b08b"
+    },
+    {
+      "entreprise": "Voodoo",
+      "motif": "enquêteur : aucun décideur nommé vérifiable, aucune adresse, exclusions non concluantes ; offres Creative Strategist (02/07, ancienne) et Lead Creative Manager (sur site)."
+    },
+    {
+      "entreprise": "Vestiaire Collective",
+      "motif": "éclaireur : offre RSE (Sustainability Brand & Impact Manager, remplacement), pas un poste créatif visé."
+    },
+    {
+      "entreprise": "Voodoo (Art Director - Draft Showdown)",
+      "motif": "éclaireur : offre du 06/05/2026 trop ancienne, studio de jeu interne."
+    }
+  ],
+  "a_arbitrer": [
+    {
+      "entreprise": "H Company",
+      "motif": "Offre Brand Lead (« first Head of Brand ») du 07/10/2026, hybride Paris/remote : https://jobs.ashbyhq.com/hcompany/c1c1c918-9693-427e-a5b0-833d96daa91e. Aucun responsable marketing/brand nommé (CMO et Head of Marketing vacants, page équipe : CEO, COO, produit). Possible en candidature formulaire seule si Hugo le souhaite, ou en identifiant à la main un décideur sur LinkedIn."
+    },
+    {
+      "entreprise": "Brevo",
+      "motif": "Offre Senior Creative Designer du 15/10/2026 (outils IA cités, ~6 ans demandés, Paris hybride) : https://jobs.lever.co/brevo/9f3cf4ad-2f27-48bf-90d0-5844775b6523. Décideur probable Rémi Grousset (Global Brand, Communications & Creative Director), mais parcours en agences (Biggerband, Sweet Punk) sans source indépendante, pas de LinkedIn ni d'email confirmé : exclusions non concluantes. À confirmer par Hugo sur LinkedIn."
+    }
+  ],
+  "alertes": [
+    "Lot vide : gisement maigre ce matin (7 offres créatives sur 57 entreprises du vivier, aucune levée récente avec signal créatif dans les récaps Maddyness d'octobre). L'éclaireur suggère un passage sur les levées de novembre jeudi ou vendredi.",
+    "config/quotas.toml : portfolio_cv_url est vide, l'expéditeur refusera tout envoi tant que le PDF Portfolio & CV n'est pas hébergé et son lien renseigné.",
+    "config/quotas.toml : date_debut est vide (montée en charge non démarrée) ; taille visée fixée à semaine_1 = 3.",
+    "Les pages Ashby sont rendues en JavaScript : les enquêtes passent par l'API publique (api.ashbyhq.com/posting-api/job-board/<entreprise>), plus fiable."
+  ]
+}
