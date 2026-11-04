@@ -91,10 +91,17 @@ function rendre(d) {
   c.innerHTML = h;
 }
 
+function qui(a) {
+  const nom = String(a.personne || '').trim();
+  const canaux = String(a.canal).split(',').map((c) => ({ email: '✉️ email', candidature: '📝 candidature', linkedin: '💼 LinkedIn' }[c] || c)).join(' + ');
+  if (!nom) return 'Candidature sur l\'offre publiée · ' + esc(canaux);
+  return esc(nom) + (a.poste_personne ? ', ' + esc(a.poste_personne) : '') + ' · ' + esc(a.email || canaux) + (a.email ? ' · ' + esc(canaux) : '');
+}
+
 function carte(a) {
   return '<div class="carte" id="c-' + esc(a.id) + '">' +
     '<div class="tete"><span class="entreprise">' + esc(a.entreprise) + '</span><span class="badge">' + esc(a.priorite) + ' · ' + esc(a.intitule) + ' · ' + esc(a.score) + '/100</span></div>' +
-    '<div class="meta">' + esc(a.personne) + ', ' + esc(a.poste_personne) + ' · ' + esc(a.email || 'LinkedIn seulement') + '</div>' +
+    '<div class="meta">' + qui(a) + '</div>' +
     '<p class="signal"><b>Signal.</b> ' + esc(a.signal) + '</p>' +
     '<p class="signal"><b>Leur problème.</b> ' + esc(a.probleme) + '</p>' +
     '<div class="sources">' + a.sources.map((s) => '<a href="' + esc(s) + '" target="_blank" rel="noopener">' + esc(s.replace(/^https?:\/\//, '').slice(0, 50)) + '</a>').join('') + '</div>' +
