@@ -252,7 +252,7 @@ function tick() {
     const maintenant = new Date(), j = jour_(maintenant), h = hhmm_(maintenant);
     const ouvre = Regles.estJourOuvre(maintenant);
     if (ouvre && h >= '09:30' && !fait_('controle_' + j)) { controlerLot_(j); marquer_('controle_' + j); }
-    if (ouvre && h >= '10:10' && h < '16:00' && !fait_('import_' + j)) { if (importerLot_(j)) marquer_('import_' + j); }
+    if (ouvre && h >= '10:10' && !fait_('import_' + j)) { if (importerLot_(j)) marquer_('import_' + j); }
     if (ouvre) { planifier_(maintenant); envoyerUn_(maintenant); }
     if (Number(h.slice(3)) % 15 < 5) releverReponses_();
     if (ouvre && h >= '17:30' && !fait_('bilan_' + j)) { bilanDuJour_(j); marquer_('bilan_' + j); }
@@ -506,7 +506,9 @@ function envoyerUn_(maintenant) {
 }
 
 function envoyerPremier_(l, conf) {
-  const url = urlPortfolio_(conf);
+  // En simulation, un portfolio pas encore en ligne ne bloque pas le test :
+  // une balise visible le remplace. En réel, son absence bloque tout envoi.
+  const url = urlPortfolio_(conf) || (modeReel_() ? '' : 'https://[lien-du-portfolio-a-configurer]');
   const { ctx } = contexte_(l.id);
   ctx.urlPortfolio = url;
   const a = approcheDeLigne_(l);
