@@ -5,3 +5,4 @@ sortie/
 .env
 *.local.*
 moteur/dist/
+data/offres_du_jour.json

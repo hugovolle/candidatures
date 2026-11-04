@@ -20,7 +20,7 @@ const COLONNES = [
   'canal', 'priorite', 'intitule', 'score', 'objet', 'corps', 'relance', 'linkedin_url',
   'linkedin_note', 'linkedin_message', 'linkedin_statut', 'erreurs_code', 'motif_rejet_hugo',
   'modifie_par_hugo', 'envoi_prevu', 'envoye_le', 'thread_id', 'message_id', 'relance_prevue',
-  'relance_envoyee_le', 'reponse_classe', 'reponse_le', 'json',
+  'relance_envoyee_le', 'reponse_classe', 'reponse_le', 'json', 'url_offre', 'candidature_statut',
 ];
 const SIGNATURE = 'Hugo Volle\nDirecteur artistique et creative technologist\n+33 7 81 12 69 48';
 const FUSEAU = 'Europe/Paris';
@@ -49,32 +49,43 @@ function journal_(niveau, evenement, detail) {
 }
 
 /**
- * Prévient Hugo. Discord d'abord ; si Discord refuse (il bloque souvent les
- * serveurs de Google : erreur 429 / 1015), repli automatique sur un email à
- * soi-même, pour qu'aucune alerte ne se perde.
+ * Prévient Hugo sur Discord, et uniquement sur Discord (choix de Hugo : pas
+ * d'alertes par email). Discord bloque parfois les serveurs de Google
+ * (erreur 429 / 1015) : le message est alors mis en file et renvoyé à chaque
+ * passage, dans l'ordre, jusqu'à ce qu'il passe. Rien ne se perd.
  */
 function notifier_(texte) {
-  const url = prop_('DISCORD_WEBHOOK', '');
   const prefixe = modeReel_() ? '' : '🧪 [SIMULATION] ';
-  const contenu = (prefixe + texte).slice(0, 1990);
-  if (url) {
-    try {
-      const r = UrlFetchApp.fetch(url, { method: 'post', contentType: 'application/json', payload: JSON.stringify({ content: contenu }), muteHttpExceptions: true });
-      setProp_('DERNIER_DISCORD', iso_(new Date()) + ' HTTP ' + r.getResponseCode());
-      if (r.getResponseCode() < 300) return;
-      journal_('erreur', 'Discord', r.getResponseCode() + ' ' + r.getContentText().slice(0, 300));
-    } catch (e) { journal_('erreur', 'Discord', e.message); }
-  }
-  notifierParEmail_(contenu);
+  const file = fileDiscord_();
+  file.push({ t: hhmm_(), c: (prefixe + texte).slice(0, 1900) });
+  setProp_('FILE_DISCORD', JSON.stringify(file.slice(-30)));
+  viderFileDiscord_();
 }
 
-function notifierParEmail_(contenu) {
-  try {
-    const moi = Session.getEffectiveUser().getEmail();
-    const premiere = contenu.split('\n')[0].replace(/\*\*/g, '').slice(0, 90);
-    GmailApp.sendEmail(moi, '[Candidatures] ' + premiere, contenu.replace(/\*\*/g, ''), { name: 'Moteur candidatures' });
-    setProp_('DERNIER_EMAIL_ALERTE', iso_(new Date()));
-  } catch (e) { journal_('erreur', 'alerte par email', e.message); }
+function fileDiscord_() {
+  try { return JSON.parse(prop_('FILE_DISCORD', '[]')); } catch (e) { return []; }
+}
+
+/** Envoie les messages en attente, du plus ancien au plus récent ; s'arrête au premier refus. */
+function viderFileDiscord_() {
+  const url = prop_('DISCORD_WEBHOOK', '');
+  let file = fileDiscord_();
+  if (!url || !file.length) return;
+  while (file.length) {
+    const m = file[0];
+    const retard = m.t !== hhmm_() ? ' _(message de ' + m.t + ', retardé par Discord)_' : '';
+    let code;
+    try {
+      code = UrlFetchApp.fetch(url, { method: 'post', contentType: 'application/json', payload: JSON.stringify({ content: (m.c + retard).slice(0, 1990) }), muteHttpExceptions: true }).getResponseCode();
+    } catch (e) { code = 0; }
+    setProp_('DERNIER_DISCORD', iso_(new Date()) + ' HTTP ' + code);
+    if (code >= 300 || code === 0) {
+      if (!fait_('discord_refus_' + jour_() + '_' + hhmm_().slice(0, 2))) { marquer_('discord_refus_' + jour_() + '_' + hhmm_().slice(0, 2)); journal_('erreur', 'Discord', 'HTTP ' + code + ', ' + file.length + ' message(s) en attente, nouvel essai dans 5 min'); }
+      break;
+    }
+    file = file.slice(1);
+    setProp_('FILE_DISCORD', JSON.stringify(file));
+  }
 }
 
 function urlPage_() { try { return ScriptApp.getService().getUrl() || ''; } catch (e) { return ''; } }
@@ -130,6 +141,16 @@ function listeDepot_(chemin) {
 
 // ---------- Tableau ----------
 
+/** En-tête réel de l'onglet, complété des colonnes ajoutées depuis l'installation. */
+function entete_() {
+  const f = feuille_(ONGLET.approches);
+  if (f.getLastRow() === 0) { f.appendRow(COLONNES); return COLONNES.slice(); }
+  const e = f.getDataRange().getValues()[0].map(String);
+  const manquantes = COLONNES.filter(function (c) { return e.indexOf(c) < 0; });
+  manquantes.forEach(function (c) { e.push(c); f.getRange(1, e.length).setValue(c); });
+  return e;
+}
+
 function lignes_() {
   const f = feuille_(ONGLET.approches);
   const v = f.getDataRange().getValues();
@@ -143,9 +164,9 @@ function lignes_() {
 }
 
 function maj_(ligne, champs) {
-  const f = feuille_(ONGLET.approches);
+  const f = feuille_(ONGLET.approches), e = entete_();
   for (const c in champs) {
-    const k = COLONNES.indexOf(c);
+    const k = e.indexOf(c);
     if (k < 0) throw new Error('Colonne inconnue : ' + c);
     f.getRange(ligne, k + 1).setValue(champs[c]);
   }
@@ -204,8 +225,8 @@ function approcheDeLigne_(l) {
 function installer() {
   const f = feuille_(ONGLET.approches);
   // Tout en texte brut : sinon Sheets convertit les dates ISO et les identifiants.
-  f.getRange(1, 1, f.getMaxRows(), COLONNES.length).setNumberFormat('@');
-  if (f.getLastRow() === 0) { f.appendRow(COLONNES); f.setFrozenRows(1); }
+  f.getRange(1, 1, f.getMaxRows(), COLONNES.length + 5).setNumberFormat('@');
+  entete_(); f.setFrozenRows(1);
   const j = feuille_(ONGLET.journal);
   if (j.getLastRow() === 0) { j.appendRow(['horodatage', 'niveau', 'evenement', 'detail']); j.setFrozenRows(1); }
   const n = feuille_(ONGLET.listeNoire);
@@ -251,6 +272,7 @@ function tick() {
   try {
     const maintenant = new Date(), j = jour_(maintenant), h = hhmm_(maintenant);
     const ouvre = Regles.estJourOuvre(maintenant);
+    viderFileDiscord_();
     if (ouvre && h >= '09:30' && !fait_('controle_' + j)) { controlerLot_(j); marquer_('controle_' + j); }
     if (ouvre && h >= '10:10' && !fait_('import_' + j)) { if (importerLot_(j)) marquer_('import_' + j); }
     if (ouvre) { planifier_(maintenant); envoyerUn_(maintenant); }
@@ -259,7 +281,6 @@ function tick() {
     if (h >= '18:00' && !fait_('export_' + j)) { exporterSuivi_(); marquer_('export_' + j); }
     if (maintenant.getDay() === 1 && h >= '09:00' && !fait_('hebdo_' + j)) { publierBilanHebdo_(maintenant); marquer_('hebdo_' + j); }
     if (h >= '23:00' && !fait_('menage_' + j)) { menage_(); marquer_('menage_' + j); }
-    if (!fait_('autotest_notification_v2')) { marquer_('autotest_notification_v2'); notifier_('✅ Moteur candidatures connecté. Les alertes t\'arriveront ici (ou par email si Discord est indisponible).'); }
     if (!fait_('diag_' + j + '_' + h.slice(0, 2))) { marquer_('diag_' + j + '_' + h.slice(0, 2)); try { diagnostiquer(); } catch (e) { journal_('erreur', 'diagnostic', e.message); } }
   } catch (e) {
     journal_('erreur', 'tick', e.stack || e.message);
@@ -296,10 +317,10 @@ function etatMoteur_() {
       GITHUB_TOKEN: p('GITHUB_TOKEN') ? (/^(github_pat_|ghp_)/.test(p('GITHUB_TOKEN')) ? 'présent, format GitHub' : 'présent, FORMAT INATTENDU') : 'absent',
       DISCORD_WEBHOOK: p('DISCORD_WEBHOOK') ? (/^https:\/\/(ptb\.|canary\.)?discord(app)?\.com\/api\/webhooks\/\d+\/[\w-]+$/.test(p('DISCORD_WEBHOOK').trim()) ? 'présent, format webhook' : 'présent, FORMAT INATTENDU (pas une URL de webhook)') : 'absent',
       URL_PORTFOLIO: p('URL_PORTFOLIO') ? (/^https:\/\//.test(p('URL_PORTFOLIO')) ? 'présent' : 'présent, FORMAT INATTENDU') : 'absent',
-      autres: Object.keys(PropertiesService.getScriptProperties().getProperties()).filter(function (k) { return !/^fait_/.test(k) && ['MODE', 'GITHUB_DEPOT', 'LIEN_ROUTINE', 'GITHUB_TOKEN', 'DISCORD_WEBHOOK', 'URL_PORTFOLIO', 'DERNIER_DISCORD', 'DERNIER_EMAIL_ALERTE', 'DATE_DEBUT', 'DIAG_EMPREINTE'].indexOf(k) < 0; }),
+      autres: Object.keys(PropertiesService.getScriptProperties().getProperties()).filter(function (k) { return !/^fait_/.test(k) && ['MODE', 'GITHUB_DEPOT', 'LIEN_ROUTINE', 'GITHUB_TOKEN', 'DISCORD_WEBHOOK', 'URL_PORTFOLIO', 'DERNIER_DISCORD', 'FILE_DISCORD', 'DATE_DEBUT', 'DIAG_EMPREINTE'].indexOf(k) < 0; }),
     },
     dernier_discord: p('DERNIER_DISCORD') || 'jamais',
-    dernier_email_alerte: p('DERNIER_EMAIL_ALERTE') || 'jamais',
+    messages_discord_en_attente: fileDiscord_().length,
     declencheurs: ScriptApp.getProjectTriggers().map(function (t) { return t.getHandlerFunction(); }),
     approches: lignes_().length,
     journal: v.slice(Math.max(1, v.length - 25)).map(function (r) { return [r[0], r[1], r[2], String(r[3]).replace(/https:\/\/discord[^\s]+/g, '[webhook]').slice(0, 400)]; }),
@@ -309,7 +330,7 @@ function etatMoteur_() {
 /** Publie le diagnostic s'il a changé. Appelé chaque heure par tick, ou à la main. */
 function diagnostiquer() {
   const etat = etatMoteur_();
-  const empreinte = JSON.stringify([etat.proprietes, etat.dernier_discord, etat.dernier_email_alerte, etat.journal.slice(-5), etat.approches]);
+  const empreinte = JSON.stringify([etat.proprietes, etat.dernier_discord, etat.messages_discord_en_attente, etat.journal.slice(-5), etat.approches]);
   if (empreinte === prop_('DIAG_EMPREINTE', '')) return 'Diagnostic inchangé.';
   ecrireDepot_('data/diagnostic.json', 'lots', JSON.stringify(etat, null, 2), 'Diagnostic du moteur');
   setProp_('DIAG_EMPREINTE', empreinte);
@@ -344,7 +365,7 @@ function importerDonneesLot_(lot, exemple) {
   const existants = {};
   lignes_().forEach(function (l) { existants[l.id] = true; });
   const res = Regles.validerLot(lot, ctx);
-  const f = feuille_(ONGLET.approches);
+  const f = feuille_(ONGLET.approches), entete = entete_();
   let ok = 0, refusees = 0;
   (lot.approches || []).forEach(function (a, i) {
     if (!a || existants[a.id]) return;
@@ -356,9 +377,9 @@ function importerDonneesLot_(lot, exemple) {
       canal: (a.canal || []).join(','), priorite: a.poste, intitule: a.intitule_vise || '', score: a.score,
       objet: m.objet || '', corps: m.corps || '', relance: m.relance || '', linkedin_url: p.linkedin || '',
       linkedin_note: m.linkedin_note || '', linkedin_message: m.linkedin_message || '', linkedin_statut: '',
-      erreurs_code: err.join(' ; '), json: JSON.stringify(a),
+      erreurs_code: err.join(' ; '), json: JSON.stringify(a), url_offre: a.url_offre || '', candidature_statut: '',
     };
-    f.appendRow(COLONNES.map(function (c) { return ligne[c] === undefined ? '' : ligne[c]; }));
+    f.appendRow(entete.map(function (c) { return ligne[c] === undefined ? '' : ligne[c]; }));
     if (err.length) refusees++; else ok++;
   });
   journal_('info', 'import ' + lot.date, ok + ' à valider, ' + refusees + ' refusée(s) par le code' + (exemple ? ' (exemple)' : ''));
@@ -387,7 +408,8 @@ function donneesPage() {
       sources: a.sources || [], objet: l.objet, corps: l.corps, relance: l.relance, linkedin_url: l.linkedin_url,
       linkedin_note: l.linkedin_note, linkedin_message: String(l.linkedin_message || '').replace(Regles.BALISE_PORTFOLIO, url || '[lien portfolio]'),
       linkedin_statut: l.linkedin_statut, erreurs: l.erreurs_code, envoi_prevu: l.envoi_prevu ? hhmm_(new Date(l.envoi_prevu)) : '',
-      remarques: (a.censeur || {}).remarques || '',
+      remarques: (a.censeur || {}).remarques || '', url_offre: l.url_offre || '',
+      message_candidature: String(l.corps || '').replace(Regles.BALISE_PORTFOLIO, url || '[lien portfolio]'),
     };
   };
   const aujourdhui = jour_();
@@ -396,6 +418,7 @@ function donneesPage() {
     aValider: ls.filter(function (l) { return l.statut === 'a_valider'; }).map(vue),
     bloquees: ls.filter(function (l) { return l.statut === 'refusee_code' && String(l.date_lot).slice(0, 10) === aujourdhui; }).map(vue),
     planifiees: ls.filter(function (l) { return ['validee', 'planifiee'].indexOf(l.statut) >= 0; }).map(vue),
+    candidatures: ls.filter(function (l) { return String(l.canal).indexOf('candidature') >= 0 && ['validee', 'planifiee', 'envoyee', 'linkedin_seul'].indexOf(l.statut) >= 0 && l.candidature_statut !== 'deposee'; }).map(vue),
     linkedin: ls.filter(function (l) { return String(l.canal).indexOf('linkedin') >= 0 && ['validee', 'planifiee', 'envoyee', 'linkedin_seul'].indexOf(l.statut) >= 0 && l.linkedin_statut !== 'message'; }).map(vue),
   };
 }
@@ -449,7 +472,20 @@ function modifier(id, champs) {
 
 function linkedinFait(id, etape) {
   const l = trouver_(id);
-  maj_(l._ligne, { linkedin_statut: etape === 'message' ? 'message' : 'invitation' });
+  const champs = { linkedin_statut: etape === 'message' ? 'message' : 'invitation' };
+  // Un contact LinkedIn compte comme une approche (délai de 6 mois).
+  if (!l.envoye_le && String(l.canal).indexOf('email') < 0) champs.envoye_le = iso_(new Date());
+  maj_(l._ligne, champs);
+  return donneesPage();
+}
+
+/** Hugo a déposé la candidature sur la page de l'offre. */
+function candidatureDeposee(id) {
+  const l = trouver_(id);
+  const champs = { candidature_statut: 'deposee' };
+  if (!l.envoye_le && String(l.canal).indexOf('email') < 0) champs.envoye_le = iso_(new Date());
+  maj_(l._ligne, champs);
+  journal_('info', 'candidature déposée', id);
   return donneesPage();
 }
 
@@ -471,7 +507,7 @@ function planifier_(maintenant) {
   if (resteTotal <= 0) return;
 
   const relances = (conf.relance || {}).active ? ls.filter(function (l) {
-    return l.statut === 'envoyee' && l.relance && !l.relance_prevue && !l.relance_envoyee_le && !l.reponse_classe &&
+    return l.statut === 'envoyee' && l.thread_id && l.relance && !l.relance_prevue && !l.relance_envoyee_le && !l.reponse_classe &&
       l.envoye_le && Regles.joursOuvresEntre(new Date(l.envoye_le), maintenant) >= ((conf.relance || {}).jours_ouvres || 6);
   }) : [];
   const resteP = Math.max(0, Regles.plafondPremiers(conf, maintenant) - premiersDuJour);

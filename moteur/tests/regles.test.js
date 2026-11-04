@@ -150,3 +150,13 @@ test('texte final : balise remplacée, signature ajoutée', () => {
   const t = R.texteFinal('Voir {{PORTFOLIO}}', 'https://x.test', 'Hugo Volle');
   assert.equal(t, 'Voir https://x.test\n\nHugo Volle');
 });
+
+test('canal candidature : offre publiée sans destinataire nommé, lien d\'offre obligatoire', () => {
+  const a = approche();
+  a.canal = ['candidature']; a.url_offre = 'https://jobs.ashbyhq.com/exemple/123';
+  a.personne = { prenom: '', nom: '', poste: '' }; delete a.email; delete a.statut_email;
+  a.message.corps = 'Bonjour, ' + 'je propose une approche de la création qui relie marque et production à grande échelle, avec des outils que je construis moi-même. '.repeat(3) + 'Mon portfolio : {{PORTFOLIO}}';
+  assert.deepEqual(R.validerApproche(a, ctx()), []);
+  delete a.url_offre;
+  assert.ok(contient(R.validerApproche(a, ctx()), 'url_offre'));
+});

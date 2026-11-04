@@ -72,6 +72,10 @@ function rendre(d) {
   else h += '<button class="tout" onclick="toutValider()">Tout valider (' + d.aValider.length + ')</button>';
   for (const a of d.aValider) h += carte(a);
 
+  h += '<h2>Candidatures à déposer (' + d.candidatures.length + ')</h2>';
+  if (!d.candidatures.length) h += '<p class="vide">Aucune candidature en attente.</p>';
+  for (const a of d.candidatures) h += carteCandidature(a);
+
   h += '<h2>LinkedIn, à faire à la main (' + d.linkedin.length + ')</h2>';
   if (!d.linkedin.length) h += '<p class="vide">Aucune action LinkedIn en attente.</p>';
   for (const a of d.linkedin) h += carteLinkedin(a);
@@ -96,15 +100,24 @@ function carte(a) {
     '<div class="sources">' + a.sources.map((s) => '<a href="' + esc(s) + '" target="_blank" rel="noopener">' + esc(s.replace(/^https?:\/\//, '').slice(0, 50)) + '</a>').join('') + '</div>' +
     (a.email ? '<label>Objet</label><input id="o-' + esc(a.id) + '" value="' + esc(a.objet) + '">' +
       '<label>Email</label><textarea id="m-' + esc(a.id) + '">' + esc(a.corps) + '</textarea>' +
-      (a.relance ? '<label>Relance (J+6 ouvrés si pas de réponse)</label><textarea class="court" id="r-' + esc(a.id) + '">' + esc(a.relance) + '</textarea>' : '') : '') +
+      (a.relance ? '<label>Relance (J+6 ouvrés si pas de réponse)</label><textarea class="court" id="r-' + esc(a.id) + '">' + esc(a.relance) + '</textarea>' : '')
+      : (a.url_offre ? '<p><a href="' + esc(a.url_offre) + '" target="_blank" rel="noopener">Voir l\'offre</a></p><label>Message de candidature (à coller dans le formulaire)</label><textarea id="m-' + esc(a.id) + '">' + esc(a.corps) + '</textarea>' : '')) +
     (a.remarques ? '<p class="meta">Censeur : ' + esc(a.remarques) + '</p>' : '') +
     '<div class="erreurs" id="e-' + esc(a.id) + '"></div>' +
     '<div class="actions">' +
       '<button class="valider" onclick="valider(\'' + esc(a.id) + '\')">Valider</button>' +
-      (a.email ? '<button class="neutre" onclick="enregistrer(\'' + esc(a.id) + '\')">Enregistrer mes modifications</button>' : '') +
+      (a.email || a.url_offre ? '<button class="neutre" onclick="enregistrer(\'' + esc(a.id) + '\')">Enregistrer mes modifications</button>' : '') +
       '<select id="mo-' + esc(a.id) + '" style="width:auto">' + MOTIFS.map((m) => '<option>' + m + '</option>').join('') + '</select>' +
       '<button class="rejeter" onclick="rejeter(\'' + esc(a.id) + '\')">Rejeter</button>' +
     '</div></div>';
+}
+
+function carteCandidature(a) {
+  return '<div class="carte"><div class="tete"><span class="entreprise">' + esc(a.entreprise) + '</span><span class="badge">' + esc(a.intitule) + '</span></div>' +
+    '<p><a href="' + esc(a.url_offre) + '" target="_blank" rel="noopener">Ouvrir l\'offre et son formulaire</a></p>' +
+    '<p class="meta">Colle ce message dans le champ « lettre » ou « message » du formulaire :</p>' +
+    '<div class="copie">' + esc(a.message_candidature) + '</div>' +
+    '<div class="actions"><button class="neutre" onclick="copier(this)">Copier</button><button class="valider" onclick="deposee(\'' + esc(a.id) + '\')">Candidature déposée</button></div></div>';
 }
 
 function carteLinkedin(a) {
@@ -130,8 +143,10 @@ const valider = (id) => action(appel('valider', id));
 const toutValider = () => { if (confirm('Valider toutes les approches de la liste ?')) action(appel('toutValider')); };
 const rejeter = (id) => action(appel('rejeter', id, document.getElementById('mo-' + id).value));
 const li = (id, etape) => action(appel('linkedinFait', id, etape));
+const deposee = (id) => action(appel('candidatureDeposee', id));
 function enregistrer(id) {
-  const champs = { objet: document.getElementById('o-' + id).value, corps: document.getElementById('m-' + id).value };
+  const champs = { corps: document.getElementById('m-' + id).value };
+  const o = document.getElementById('o-' + id); if (o) champs.objet = o.value;
   const r = document.getElementById('r-' + id); if (r) champs.relance = r.value;
   action(appel('modifier', id, champs), 'e-' + id);
 }

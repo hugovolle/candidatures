@@ -25,6 +25,22 @@ produit**, avec au moins un de ces signaux, du plus fort au plus faible :
 4. **Lancement** de produit, de marque, d'offre ou d'international.
 5. **Rebranding annoncé** ou identité visiblement en décalage avec sa croissance.
 
+## Par où commencer (obligatoire)
+
+1. Lance `node moteur/collecter_offres.js`. Il lit sans IA les pages carrières
+   des entreprises de `data/vivier.csv` (Lever, Greenhouse, Ashby, Workable)
+   et écrit `data/offres_du_jour.json` : des offres créatives réelles, datées,
+   en France ou en remote, avec leur lien de candidature. **C'est ta source la
+   plus fiable** : chaque offre pertinente de ce fichier est une candidate.
+2. Complète ensuite avec les signaux du marché caché (levées, recrutements
+   marketing) ci-dessous.
+3. Si tu découvres une entreprise pertinente dont la page carrières est sur une
+   de ces plateformes, signale-la dans ta réponse (`vivier_a_ajouter`) : Hugo
+   ou Claude l'ajoutera au vivier.
+
+Welcome to the Jungle et LinkedIn bloquent les robots : ne perds pas de temps
+à les ouvrir, utilise seulement les extraits de la recherche web.
+
 ## Où chercher (gratuit)
 
 - Offres : Welcome to the Jungle, l'API France Travail si une clé est
@@ -50,6 +66,7 @@ Une liste de **2 à 3 fois plus de candidates que la taille du lot**, au format 
   "signal": "…",
   "signal_date": "2026-10-21",
   "poste_pressenti": "A",
+  "url_offre": "https://jobs.ashbyhq.com/… (si offre publiée)",
   "remote": "full remote affiché (source)",
   "sources": ["https://…", "https://…"]
 }

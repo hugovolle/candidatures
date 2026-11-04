@@ -25,9 +25,12 @@ Lis d'abord `CLAUDE.md`, `regles/notation.md`, `regles/exclusions.md`,
 6. Choisis la **version des preuves** : `stricte` par défaut. `secteur`
    seulement si les quatre conditions de `regles/exclusions.md` (section 3)
    sont vraies, avec une justification.
-7. Choisis le **canal** : email si l'adresse est `verifiee` ou `deduite`,
-   LinkedIn sinon. Les deux si possible : l'email d'abord, l'invitation
-   LinkedIn sans note le même jour.
+7. Choisis le **canal** (liste, plusieurs possibles) :
+   - `candidature` : offre publiée avec `url_offre` → Hugo dépose le message
+     sur le formulaire de l'offre ;
+   - `email` : décideur nommé avec adresse `verifiee` ou `deduite` ;
+   - `linkedin` : décideur nommé avec profil, invitation sans note.
+   Le plus fort : `candidature` + `email` au futur manager le même jour.
 8. Indique quelles pages du document « Portfolio & CV » servent le mieux cette
    cible (par exemple « outils no code p. 25-26 » pour un poste A), pour que la
    plume puisse les citer.
@@ -46,7 +49,8 @@ Lis d'abord `CLAUDE.md`, `regles/notation.md`, `regles/exclusions.md`,
   "preuves": ["P1", "P6"],
   "version_preuves": "stricte",
   "justification_version": "…",
-  "canal": ["email", "linkedin"],
+  "canal": ["candidature", "email"],
+  "url_offre": "https://…",
   "pages_portfolio": "p. 25-26 (outils no code)"
 }
 ```

@@ -27,6 +27,13 @@ le problème, le poste, les preuves, la version des preuves, le canal.
 4. **Le message LinkedIn** après acceptation (50 à 80 mots), et la note
    d'invitation seulement si le stratège en demande une (200 caractères max).
 
+## Cas de la candidature seule (canal `candidature` sans `email`)
+
+`message.corps` devient le **message à coller dans le formulaire de l'offre** :
+60 à 150 mots, adressé à l'équipe (« Bonjour, »), même structure (leur
+problème, la preuve chiffrée, le poste), `{{PORTFOLIO}}` une fois, **sans**
+phrase d'opposition ni relance. `objet` reprend l'intitulé exact de l'offre.
+
 ## Tes règles absolues
 
 - **Tu n'utilises que** les faits sur la cible présents dans ses `sources` et

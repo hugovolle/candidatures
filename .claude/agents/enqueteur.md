@@ -20,6 +20,11 @@ Lis d'abord `CLAUDE.md` et `regles/exclusions.md`.
 
 Pour une offre publiée : la personne citée sur l'offre, sinon le futur manager.
 
+Pour une **offre publiée**, le canal principal est le formulaire de l'offre
+(`url_offre`) : un destinataire nommé n'est pas obligatoire. Cherche quand même
+le futur manager : s'il est trouvé et vérifié, l'approche combine la
+candidature et un email (ou LinkedIn) à cette personne.
+
 ## 2. L'adresse
 
 Par ordre de préférence :

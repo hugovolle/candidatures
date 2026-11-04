@@ -115,10 +115,15 @@ const Regles = (function () {
 
     const canal = Array.isArray(a.canal) ? a.canal : [];
     const parEmail = canal.indexOf('email') >= 0;
+    const parCandidature = canal.indexOf('candidature') >= 0;
+    const parLinkedin = canal.indexOf('linkedin') >= 0;
+    if (!parEmail && !parCandidature && !parLinkedin) err.push('aucun canal valide (email, candidature ou linkedin)');
     const msg = a.message || {};
 
     // Destinataire
-    if (!a.personne.prenom || !a.personne.nom) err.push('personne non nommée (règle rouge n°5)');
+    // Exception de la règle rouge n°5 : une candidature sur une offre publiée
+    // n'a pas besoin d'un destinataire nommé (le formulaire de l'offre suffit).
+    if ((parEmail || parLinkedin) && (!a.personne.prenom || !a.personne.nom)) err.push('personne non nommée (règle rouge n°5)');
     if (parEmail) {
       const dom = domaineDe(a.email);
       if (!dom) err.push('adresse email invalide : ' + a.email);
@@ -169,6 +174,16 @@ const Regles = (function () {
         const nRel = compterMots(msg.relance);
         if (nRel > 70) err.push('relance trop longue (' + nRel + ' mots)');
         if (/https?:\/\/|www\./i.test(msg.relance)) err.push('aucune adresse web dans la relance');
+      }
+    }
+    if (parCandidature) {
+      if (!/^https:\/\//.test(String(a.url_offre || ''))) err.push('url_offre manquante ou invalide pour une candidature');
+      if (!parEmail) {
+        const nC = compterMots(msg.corps);
+        if (nC < 60 || nC > 150) err.push('message de candidature de ' + nC + ' mots (60 à 150 attendus)');
+        const nB = String(msg.corps || '').split(BALISE_PORTFOLIO).length - 1;
+        if (nB !== 1) err.push('le message de candidature doit contenir {{PORTFOLIO}} exactement une fois');
+        if (/https?:\/\/|www\./i.test(String(msg.corps || ''))) err.push('aucune adresse web en clair dans le message : utiliser {{PORTFOLIO}}');
       }
     }
     if (msg.linkedin_note && String(msg.linkedin_note).length > 200) err.push('note LinkedIn de plus de 200 caractères');

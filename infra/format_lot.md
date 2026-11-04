@@ -25,6 +25,7 @@ bilan.
       "statut_email": "verifiee",
       "preuve_email": "https://…",
       "canal": ["email", "linkedin"],
+      "url_offre": null,
       "poste": "A",
       "intitule_vise": "Creative Technologist",
       "score": 81,
@@ -55,6 +56,17 @@ bilan.
   "alertes": []
 }
 ```
+
+## Canaux
+
+| Canal | Ce que fait le moteur | Ce que fait Hugo |
+|---|---|---|
+| `email` | Envoie depuis Gmail, dans les fenêtres, puis relance | Valide |
+| `candidature` | Affiche l'offre et le message prêt à coller | Dépose sur le formulaire, clique « Candidature déposée » |
+| `linkedin` | Affiche le profil et les messages | Invitation, puis message, à la main |
+
+Une approche `candidature` seule exige `url_offre` ; un destinataire nommé
+n'est alors pas obligatoire (exception de la règle rouge n°5).
 
 ## Règles
 

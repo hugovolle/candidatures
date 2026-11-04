@@ -67,7 +67,7 @@ function monde(options) {
   const UrlFetchApp = { fetch: (url, o) => {
     o = o || {};
     if (url.startsWith('https://discord.test')) {
-      if (options.discordCode) return reponse(options.discordCode, 'error code: 1015');
+      if (etat.discordCode) return reponse(etat.discordCode, 'error code: 1015');
       discord.push(JSON.parse(o.payload).content); return reponse(204, '');
     }
     const m = /contents\/([^?]+)(?:\?ref=(.+))?$/.exec(url);
@@ -79,6 +79,7 @@ function monde(options) {
 
   // --- Gmail ---
   const envoyes = [], fils = {}, alertesEmail = [];
+  const etat = { discordCode: options.discordCode || 0 };
   const GmailApp = {
     createDraft: (a, objet, corps) => ({ send: () => {
       const id = 'fil-' + (envoyes.length + 1);
@@ -106,7 +107,7 @@ function monde(options) {
   vm.runInContext(lireFichier('moteur/regles.js') + '\n' + lireFichier('moteur/apps-script/Code.js'), ctx);
 
   return {
-    ctx, feuilles, proprietes, depot, discord, envoyes, fils, alertesEmail,
+    ctx, feuilles, proprietes, depot, discord, envoyes, fils, alertesEmail, etat,
     allerA: (h, m, jour) => { maintenant = new RealDate(2026, 10, jour || 4, h, m); },
     /** Fait tourner tick() toutes les 5 minutes entre deux heures. */
     derouler: function (h1, m1, h2, m2, jour) {
@@ -249,10 +250,36 @@ test('week-end : aucune action d\'envoi', () => {
   assert.equal(w.lignes().length, 0);
 });
 
-test('Discord refuse (429 / 1015) : l\'alerte part par email à Hugo', () => {
+test('Discord refuse (429 / 1015) : le message attend et part au passage suivant, jamais par email', () => {
   const w = monde({ discordCode: 429 });
   w.ctx.installer();
   lotDuJour(w, 1);
   w.derouler(10, 10, 10, 10);
-  assert.ok(w.alertesEmail.some((m) => m.a === 'hugo.volle.da@gmail.com' && m.objet.startsWith('[Candidatures]') && m.corps.includes('à valider')));
+  assert.equal(w.discord.length, 0);
+  assert.equal(w.alertesEmail.length, 0, 'aucune alerte par email');
+  w.etat.discordCode = 0;
+  w.derouler(10, 15, 10, 15);
+  assert.ok(w.discord.some((d) => d.includes('à valider') && d.includes('retardé par Discord')));
+});
+
+test('candidature sur offre publiée : validée, à déposer à la main, jamais envoyée par email', () => {
+  const w = monde({ proprietes: { MODE: 'reel', URL_PORTFOLIO: 'https://drive.google.test/p' } });
+  w.ctx.installer();
+  const lot = lotDuJour(w, 1);
+  const a = lot.approches[0];
+  a.canal = ['candidature']; a.url_offre = 'https://jobs.ashbyhq.com/exemple/123';
+  a.personne = { prenom: '', nom: '', poste: '' }; delete a.email;
+  a.message.corps = 'Bonjour, ' + 'je relie marque et production à grande échelle avec des outils que je construis moi-même, pour une équipe qui grandit vite. '.repeat(3) + 'Mon portfolio : {{PORTFOLIO}}';
+  w.depot.lots['data/lots/2026-11-04.json'] = JSON.stringify(lot);
+  w.derouler(10, 10, 10, 10);
+  assert.equal(w.lignes()[0].statut, 'a_valider', w.lignes()[0].erreurs_code);
+  w.ctx.toutValider();
+  w.derouler(10, 15, 17, 0);
+  assert.equal(w.envoyes.length, 0, 'aucun email pour une candidature');
+  const d = w.ctx.donneesPage();
+  assert.equal(d.candidatures.length, 1);
+  assert.ok(d.candidatures[0].message_candidature.includes('https://drive.google.test/p'));
+  w.ctx.candidatureDeposee(a.id);
+  assert.ok(w.lignes()[0].envoye_le, 'le dépôt compte comme une approche (délai de 6 mois)');
+  assert.equal(w.ctx.donneesPage().candidatures.length, 0);
 });

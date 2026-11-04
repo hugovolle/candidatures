@@ -25,7 +25,8 @@ avant le volume, toujours.
 
 ## 1. Éclaireur
 
-Lance l'agent `eclaireur` en lui donnant la taille du lot et la répartition
+Lance d'abord toi-même `node moteur/collecter_offres.js` (moins d'une minute)
+et donne son résumé à l'éclaireur. Puis lance l'agent `eclaireur` en lui donnant la taille du lot et la répartition
 visée par priorité. Il doit rendre 2 à 3 fois plus de candidates.
 
 Retire toute candidate dont le domaine apparaît dans `data/liste_noire.txt`,
