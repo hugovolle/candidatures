@@ -36,8 +36,16 @@ depuis moins de 6 mois.
 ## 2. Enquêteur
 
 Lance `enqueteur` sur les candidates restantes, plusieurs en parallèle si
-possible. Écarte toute candidate sans décideur nommé ou dont la vérification
-d'exclusions n'est pas concluante.
+possible. Écarte une candidate si :
+- les exclusions d'**entreprise** ne passent pas (listes, Camden, agences,
+  boissons, « sans IA ») ;
+- elle n'a **ni** décideur nommé et vérifié, **ni** offre publiée avec
+  `url_offre`.
+
+Une offre publiée **sans** décideur trouvé reste une bonne cible : elle passe
+au stratège en canal `candidature` seul. Si un décideur est trouvé mais que
+sa vérification de personne n'est pas concluante, on ne lui écrit pas, mais la
+candidature sur l'offre reste possible.
 
 ## 3. Stratège
 

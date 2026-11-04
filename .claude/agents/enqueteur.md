@@ -56,13 +56,20 @@ profils. Vérifie le parcours autrement, dans cet ordre :
 2. page équipe du site, presse, conférences, Welcome to the Jungle, Malt ;
 3. recherche `"Prénom Nom" Camden` et `"Prénom Nom" Distilleurs`.
 
-La vérification est **concluante** si au moins deux sources indépendantes
-décrivent le parcours sans aucun lien avec Camden ou la filière boissons
-lyonnaise. Écris dans `verification_exclusions` les sources utilisées. Hugo
-relit chaque approche avant envoi : il est le dernier contrôle, pas le seul.
+La vérification est **concluante** si :
+1. au moins une source décrit le parcours de la personne ;
+2. les recherches `"Prénom Nom" Camden` et `"Prénom Nom" Distilleurs` ne
+   renvoient aucun lien entre elle et Camden ;
+3. rien ne la relie à la filière boissons lyonnaise.
+Le but est d'éviter une fuite vers Camden, pas de reconstituer tout un CV :
+des années en agence sans source détaillée ne rendent pas la vérification
+non concluante, un lien avec Camden si. Écris les sources dans
+`verification_exclusions`. Hugo relit chaque approche avant envoi : il est
+le dernier contrôle, pas le seul.
 
-Au moindre « peut-être » (un lien trouvé, ou aucune source sur le parcours),
-la cible est écartée.
+Au moindre « peut-être » sur Camden (un lien trouvé, un doute sérieux), la
+**personne** est écartée : on ne lui écrit pas. Si l'entreprise a une offre
+publiée, la candidature sur l'offre reste possible.
 
 ## Ce que tu rends
 
