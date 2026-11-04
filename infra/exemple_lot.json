@@ -1,0 +1,41 @@
+{
+  "date": "2026-11-04",
+  "genere_a": "2026-11-04T07:41:12+01:00",
+  "version_format": 1,
+  "taille_visee": 3,
+  "resume": "EXEMPLE FICTIF pour les tests et la simulation. 1 approche (A). Aucune entreprise réelle.",
+  "approches": [
+    {
+      "id": "2026-11-04-01",
+      "entreprise": "Exemple Studio Tech",
+      "domaine": "exemple-tech.test",
+      "personne": {"prenom": "Camille", "nom": "Martin", "poste": "Head of Marketing", "linkedin": "https://www.linkedin.com/in/exemple-fictif"},
+      "email": "camille.martin@exemple-tech.test",
+      "statut_email": "verifiee",
+      "preuve_email": "https://exemple-tech.test/equipe",
+      "canal": ["email", "linkedin"],
+      "poste": "A",
+      "intitule_vise": "Creative Technologist",
+      "score": 81,
+      "detail_score": {"signal": 25, "capacite": 20, "adequation": 18, "decideur": 15, "remote": 5, "angle": 8},
+      "signal": "Série A de 8 M€ annoncée le 21/10/2026 (fictif)",
+      "probleme": "L'équipe marketing passe de 3 à 10 personnes et ses supports vont se multiplier plus vite que ses créatifs.",
+      "preuves": ["P1", "P6"],
+      "version_preuves": "stricte",
+      "pages_portfolio": "p. 25-26",
+      "verification_exclusions": "Parcours vérifié sur LinkedIn et le site : aucun lien avec Camden, hors filière boissons, entreprise basée à Paris.",
+      "sources": ["https://exemple-tech.test/blog/serie-a"],
+      "message": {
+        "objet": "après votre série A",
+        "corps": "Bonjour Camille,\n\nAvec votre série A, l'équipe marketing va passer de 3 à 10 personnes. Les supports à produire vont se multiplier bien plus vite que les créatifs pour les faire, et c'est souvent là que la marque commence à se diluer.\n\nC'est précisément ce que je règle : j'ai automatisé la production de plus de 60 fichiers d'exécution complexes, 2 jours au lieu de 2 semaines, et je livre des decks en quelques heures grâce à mon propre plugin Figma.\n\nJe cherche à rejoindre une équipe comme la vôtre en tant que creative technologist, en full remote. Mon portfolio : {{PORTFOLIO}}\n\nEst-ce un sujet chez vous en ce moment ?\n\nSi le sujet ne vous concerne pas, dites-le-moi et je ne vous réécrirai pas.",
+        "relance": "Bonjour Camille, une idée concrète pour vous : un gabarit de deck relié à vos données, que l'équipe met à jour seule sans repasser par un créatif. Je vous montre en 15 minutes si le sujet vous parle.",
+        "linkedin_note": null,
+        "linkedin_message": "Bonjour Camille, merci pour la connexion. Avec votre série A, vos supports vont se multiplier plus vite que l'équipe créative. J'automatise justement ce travail : 60 fichiers d'exécution en 2 jours au lieu de 2 semaines, des decks livrés en quelques heures. Je cherche un poste de creative technologist en remote. Mon portfolio : {{PORTFOLIO}}"
+      },
+      "censeur": {"eliminatoire": "ok", "note": 9, "remarques": "Exemple de référence.", "decision": "valide"}
+    }
+  ],
+  "ecartees": [],
+  "a_arbitrer": [],
+  "alertes": []
+}

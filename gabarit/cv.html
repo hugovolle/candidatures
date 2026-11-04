@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>CV · {{ id.nom }} · {{ v.titre }}</title>
+<style>
+{{ fonts_css }}
+@page { size: A4; margin: 0; }
+:root {
+  --ink: #141414;
+  --mute: #6b6b6b;
+  --rule: #d9d6d0;
+  --paper: #ffffff;
+  --accent: #c8391b;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--paper); }
+body {
+  width: 210mm; height: 297mm; overflow: hidden;
+  font-family: 'Inter Tight', system-ui, sans-serif;
+  font-size: 8.6pt; line-height: 1.42; color: var(--ink);
+  padding: 15mm 15mm 13mm 15mm;
+  -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  font-feature-settings: "ss01", "cv11";
+}
+b, strong { font-weight: 600; }
+
+/* ---------- En-tête ---------- */
+header { display: grid; grid-template-columns: 1fr 27mm; gap: 8mm; align-items: end;
+  padding-bottom: 6mm; border-bottom: 1.2pt solid var(--ink); }
+h1 { font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 46pt;
+  line-height: .86; letter-spacing: -.015em; }
+h1 i { font-style: italic; }
+.titre { margin-top: 3.4mm; font-size: 1.28em; font-weight: 600; letter-spacing: -.005em; }
+.sous-titre { margin-top: .6mm; font-size: 1em; color: var(--mute); }
+.photo { width: 27mm; height: 33mm; object-fit: cover; object-position: 50% 22%;
+  filter: grayscale(1) contrast(1.05); }
+
+.accroche { margin: 5mm 0 0; font-size: 1.1em; line-height: 1.45; max-width: 150mm; }
+
+/* ---------- Corps ---------- */
+.corps { display: grid; grid-template-columns: 1fr 48mm; gap: 9mm; margin-top: 6.5mm; }
+h2 { font-size: .8em; font-weight: 600; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--accent); padding-bottom: 1.6mm; margin-bottom: 3mm; border-bottom: .6pt solid var(--rule); }
+section + section { margin-top: 5.5mm; }
+
+.xp + .xp { margin-top: 4mm; }
+.xp-tete { display: flex; justify-content: space-between; gap: 4mm; align-items: baseline; }
+.poste { font-size: 1.1em; font-weight: 600; letter-spacing: -.005em; }
+.dates { font-size: .88em; color: var(--mute); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.structure { font-family: 'Instrument Serif', serif; font-style: italic; font-size: 1.26em; line-height: 1.15; margin-top: .3mm; }
+.structure span { font-family: 'Inter Tight', sans-serif; font-style: normal; font-size: .7em; color: var(--mute); }
+.xp ul { list-style: none; margin-top: 1.6mm; }
+.xp li { position: relative; padding-left: 3.6mm; }
+.xp li + li { margin-top: .9mm; }
+.xp li::before { content: ""; position: absolute; left: 0; top: .62em; width: 1.8mm; height: .6pt; background: var(--ink); }
+
+/* ---------- Colonne ---------- */
+aside { font-size: .94em; }
+aside p, aside li { line-height: 1.45; }
+aside ul { list-style: none; }
+.contact a { color: var(--ink); text-decoration: none; }
+.groupe + .groupe { margin-top: 2.4mm; }
+.groupe-nom { font-weight: 600; margin-bottom: .5mm; }
+.tags { color: var(--ink); }
+.tags span:not(:last-child)::after { content: " · "; color: var(--mute); }
+.faible { color: var(--mute); }
+.qr { display: flex; gap: 3mm; align-items: center; }
+.qr img { width: 17mm; height: 17mm; image-rendering: pixelated; }
+.qr a { color: var(--ink); font-weight: 600; text-decoration: none; border-bottom: .6pt solid var(--accent); }
+.formation-titre { font-weight: 600; }
+.duo { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; margin-top: 5.5mm; }
+.duo section + section { margin-top: 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>{{ prenom }} <i>{{ nom }}</i></h1>
+    <p class="titre">{{ v.titre }}</p>
+    <p class="sous-titre">{{ v.sous_titre }}</p>
+  </div>
+  {% if photo %}<img class="photo" src="{{ photo }}" alt="">{% endif %}
+</header>
+
+<p class="accroche">{{ v.accroche }}</p>
+
+<div class="corps">
+  <main>
+    <section>
+      <h2>Expérience</h2>
+      {% for xp in experiences %}
+      <div class="xp">
+        <div class="xp-tete"><p class="poste">{{ xp.poste }}</p><p class="dates">{{ xp.dates }}</p></div>
+        <p class="structure">{{ xp.structure }} <span>· {{ xp.precision }}</span></p>
+        <ul>{% for p in xp.puces %}<li>{{ p }}</li>{% endfor %}</ul>
+      </div>
+      {% endfor %}
+    </section>
+    <div class="duo">
+    <section>
+      <h2>Formation</h2>
+      {% for f in formation %}
+      <p class="formation-titre">{{ f.titre }}</p>
+      <p class="faible">{{ f.detail }} · {{ f.dates }}</p>
+      {% endfor %}
+    </section>
+
+    <section>
+      <h2>Langues & intérêts</h2>
+      {% for l in langues %}<p>{{ l }}</p>{% endfor %}
+      <p class="faible" style="margin-top:1.4mm">{{ interets | join(" · ") }}</p>
+    </section>
+    </div>
+  </main>
+
+  <aside>
+    <section class="contact">
+      <h2>Contact</h2>
+      <p>{{ id.ville }} · {{ v.mobilite or "hybride ou remote" }}</p>
+      <p><a href="mailto:{{ id.email }}">{{ id.email }}</a></p>
+      <p>{{ id.tel }}</p>
+    </section>
+
+    <section>
+      <h2>Portfolio</h2>
+      <div class="qr">
+        <img src="{{ qr }}" alt="QR code du portfolio">
+        <p><a href="{{ id.portfolio_url }}">{{ id.portfolio_court }}</a><br><span class="faible">Branding, graphisme, projets</span></p>
+      </div>
+    </section>
+
+    <section>
+      <h2>Compétences</h2>
+      {% for nom_g, items in competences %}
+      <div class="groupe"><p class="groupe-nom">{{ nom_g }}</p>
+        <p class="tags">{% for i in items %}<span>{{ i }}</span>{% endfor %}</p></div>
+      {% endfor %}
+    </section>
+
+    <section>
+      <h2>Diffusion</h2>
+      <p>{{ diffusions }}</p>
+    </section>
+  </aside>
+</div>
+</body>
+</html>

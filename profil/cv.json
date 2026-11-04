@@ -1,0 +1,82 @@
+{
+  "_lisezmoi": "Source unique du CV. Ne rien inventer ici : chaque ligne doit etre vraie et defendable en entretien. 'tags' = profils de poste pour lesquels la puce est pertinente (da, graph, com, crea). 'prio' = 1 (toujours) a 3 (si place).",
+
+  "identite": {
+    "nom": "Hugo Volle",
+    "ville": "Lyon",
+    "email": "hugo.volle.da@gmail.com",
+    "tel": "+33 7 81 12 69 48",
+    "portfolio_court": "urls.fr/tkDSIi",
+    "portfolio_url": "https://urls.fr/tkDSIi",
+    "photo": "/Users/hugovolle/Downloads/Images/photo cv.png"
+  },
+
+  "experiences": [
+    {
+      "id": "camden",
+      "poste": "Assistant Directeur Général & Directeur Artistique",
+      "structure": "Camden",
+      "precision": "agence de publicité et de branding, Lyon",
+      "dates": "2026 · aujourd'hui",
+      "puces": [
+        {"t": "Pilotage **en autonomie** du **rebranding d'une marque de brasserie** récemment rachetée par un grand groupe : identité, charte graphique, déclinaisons", "tags": ["da","crea","graph","com"], "prio": 1},
+        {"t": "**Présentation des recommandations créatives** en direct à la **direction marketing du groupe**", "tags": ["da","crea","com"], "prio": 1},
+        {"t": "Bras droit du directeur général sur les **appels d'offres** : stratégie de réponse, recommandations, decks de présentation", "tags": ["crea","da","com"], "prio": 1},
+        {"t": "Branding et identités de marque pour les clients de l'agence, dont **Petzl** et **Father & Sons** (budgets **50 K€+**)", "tags": ["da","crea","graph"], "prio": 2},
+        {"t": "Création d'une **police de caractères custom et variable** pour une identité de marque", "tags": ["graph","da"], "prio": 2},
+        {"t": "Production des livrables de marque : logos, étiquettes, chartes, mockups, assets print & digital", "tags": ["graph","com"], "prio": 3}
+      ]
+    },
+    {
+      "id": "freelance",
+      "poste": "Directeur Artistique & Graphiste",
+      "structure": "Indépendant",
+      "precision": "Lyon · Paris · Londres",
+      "dates": "2025 · aujourd'hui",
+      "puces": [
+        {"t": "**Identités visuelles complètes** : 7cheval (production audiovisuelle, Paris), Bavard (éloquence), STORI (carnets, Londres), rebranding de Vertikal (production vidéo verticale)", "tags": ["da","crea","graph"], "prio": 1},
+        {"t": "Direction artistique de l'univers **Sunset Radio d'Odetto** : titrages, tracklist, merch, live session. Audience YouTube **×16** (25K → 400K+ vues), publication phare à **3M de vues**", "tags": ["da","crea","graph","com"], "prio": 1},
+        {"t": "**Conseil en direction artistique et stratégie Instagram** pour Bureau Esthète : contenus sociaux, print, visuels 3D", "tags": ["com","da"], "prio": 2},
+        {"t": "**Decks de présentation** et gabarits clients livrés dans l'outil de chaque structure (Figma, Slides, PowerPoint)", "tags": ["com","graph","crea"], "prio": 2},
+        {"t": "Développement d'**outils sur mesure** pour accélérer la production (export de logos automatisé, générateurs graphiques)", "tags": ["crea","graph"], "prio": 3}
+      ]
+    },
+    {
+      "id": "wsn",
+      "poste": "Graphiste, Communication visuelle",
+      "structure": "WSN · Who's Next",
+      "precision": "Paris",
+      "dates": "nov. 2024 · mai 2025",
+      "puces": [
+        {"t": "**500+ supports** de signalétique et de communication événementielle pour Who's Next, **plus grand salon de mode d'Europe**", "tags": ["graph","com","da"], "prio": 1},
+        {"t": "**Contenus réseaux sociaux et newsletters** de l'ensemble du groupe, animations motion design", "tags": ["com","graph"], "prio": 1},
+        {"t": "Visuels du **partenariat TagWalk** et des collaborations médias (Fashion Network), avec le marketing, l'événementiel et la presse", "tags": ["com","da"], "prio": 2},
+        {"t": "Visuels des showrooms, assistance stylisme sur les shootings", "tags": ["da","graph"], "prio": 3}
+      ]
+    },
+    {
+      "id": "amoses",
+      "poste": "Graphiste",
+      "structure": "AMOSES",
+      "precision": "stage, marque de vêtements",
+      "dates": "fév. · juin 2024",
+      "puces": [
+        {"t": "Conception graphique d'une collection de 1 000 pièces, **sold out en moins de 2 semaines**", "tags": ["graph","da","crea","com"], "prio": 1}
+      ]
+    }
+  ],
+
+  "formation": [
+    {"titre": "BUT Métiers du Multimédia et de l'Internet", "detail": "Spécialisation audiovisuel, option théâtre", "dates": "2021 · 2024"}
+  ],
+
+  "competences": {
+    "Création": ["Direction artistique", "Identité de marque", "Charte graphique", "Typographie", "Édition & print", "Motion design", "3D", "Image générative"],
+    "Stratégie": ["Recommandation créative", "Appels d'offres", "Stratégie de contenus", "Présentation client"],
+    "Outils": ["Illustrator", "Photoshop", "InDesign", "After Effects", "Figma", "Blender", "DaVinci Resolve", "Midjourney", "HTML / CSS / JS"]
+  },
+
+  "diffusions": "Travaux diffusés par Amazon Prime Video, Spotify, Deezer, SSENSE et Fashion Network",
+  "langues": ["Français · natif", "Anglais · professionnel"],
+  "interets": ["Mode", "Culture japonaise", "Jeux de stratégie", "Entrepreneuriat"]
+}

@@ -1,0 +1,52 @@
+# Quotas et horaires de la recherche de poste.
+# Lu par les agents (taille du lot) ET par l'expéditeur Apps Script, qui
+# applique ces plafonds dans le code quoi que contienne le lot.
+
+[lot]
+# Approches préparées chaque matin, jours ouvrés. C'est un PLAFOND : le lot
+# peut être plus petit, il n'est jamais complété avec des cibles sous le seuil.
+approches_par_jour = 5
+score_minimum = 65
+note_censeur_minimum = 8
+
+[montee_en_charge]
+# La boîte Gmail n'a rien envoyé à froid depuis fin août 2026 : on remonte
+# progressivement pour protéger sa réputation (c'est l'adresse principale de Hugo).
+# Semaine 1 = 3 emails/jour, semaine 2 = 4, ensuite approches_par_jour.
+semaine_1 = 3
+semaine_2 = 4
+date_debut = ""   # renseignée au premier envoi réel
+
+[emails]
+# Plafond dur journalier, relances comprises.
+max_par_jour = 8
+# Fenêtres d'envoi, heure de Paris, du lundi au vendredi.
+fenetres = [["10:10", "12:00"], ["14:00", "17:00"]]
+# Écart aléatoire minimal et maximal entre deux envois (minutes).
+ecart_min = 12
+ecart_max = 45
+jours_feries = true   # pas d'envoi les jours fériés français
+
+[relance]
+# Une relance dans le même fil, 6 jours ouvrés plus tard, si aucune réponse.
+# Recommandée par les données (40 à 57 % des réponses arrivent après une relance).
+# ⚠️ À CONFIRMER PAR HUGO : il avait désactivé les relances pour le freelance.
+active = true
+jours_ouvres = 6
+
+[linkedin]
+# LinkedIn n'est JAMAIS automatisé (risque de bannissement). Ces chiffres
+# limitent ce que le lot propose à Hugo de faire à la main.
+invitations_par_jour = 5
+notes_par_mois = 3
+
+[documents]
+# Le document unique « Portfolio & CV » choisi par Hugo (03/11/2026) :
+# ~/Documents/PORTFOLIO & CV - HUGO VOLLE 2026.pdf (27 pages, 20 Mo).
+# À héberger en lecture seule (Google Drive, « tous les utilisateurs disposant
+# du lien »). Tant que l'URL est vide, l'expéditeur refuse tout envoi.
+portfolio_cv_url = ""
+
+[exclusions]
+delai_meme_entreprise_mois = 6
+purge_donnees_mois = 6

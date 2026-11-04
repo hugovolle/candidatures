@@ -1,0 +1,6 @@
+# Fichiers locaux, jamais poussés sur GitHub
+.DS_Store
+node_modules/
+sortie/
+.env
+*.local.*

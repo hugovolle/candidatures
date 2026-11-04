@@ -1,0 +1,9 @@
+{
+  "name": "candidatures-hugo-volle",
+  "private": true,
+  "description": "Recherche de poste de Hugo Volle : garde-fous, moteur Apps Script et tests.",
+  "scripts": {
+    "test": "TZ=Europe/Paris node --test moteur/tests/regles.test.js moteur/tests/simulation.test.js",
+    "controle": "node moteur/controle_lot.js"
+  }
+}

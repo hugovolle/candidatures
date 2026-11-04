@@ -1,0 +1,18 @@
+# Liste noire DÉFINITIVE (recherche de poste). Une entrée par ligne : domaine ou adresse complète.
+# Ne jamais retirer une entrée. Les refus et demandes d'arrêt sont ajoutés automatiquement.
+# Le contrôle porte aussi sur les NOMS : voir regles/exclusions.md (motifs_interdits).
+#
+# Camden et son groupe (Hugo y est en poste, recherche discrète)
+camdenonline.com
+camdenpublicite.com
+camdenpublicite.fr
+camden.com
+camdenadvertising.com
+lesdistilleurs.fr
+lesdistilleurs.com
+# Groupe Duvel Moortgat et ses marques (client Camden, cas cités en « groupe brassicole »)
+duvel.com
+duvelmoortgat.com
+duvel.be
+# Clients Camden connus
+petzl.com
