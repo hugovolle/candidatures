@@ -274,7 +274,8 @@ function tick() {
     const ouvre = Regles.estJourOuvre(maintenant);
     viderFileDiscord_();
     if (ouvre && h >= '09:30' && !fait_('controle_' + j)) { controlerLot_(j); marquer_('controle_' + j); }
-    if (ouvre && h >= '10:10' && !fait_('import_' + j)) { if (importerLot_(j)) marquer_('import_' + j); }
+    // Le lot est relu à chaque passage jusqu'à 20h : un lot refait dans la journée est importé aussi.
+    if (ouvre && h >= '10:10' && h < '20:00') importerLot_(j);
     if (ouvre) { planifier_(maintenant); envoyerUn_(maintenant); }
     if (Number(h.slice(3)) % 15 < 5) releverReponses_();
     if (ouvre && h >= '17:30' && !fait_('bilan_' + j)) { bilanDuJour_(j); marquer_('bilan_' + j); }
@@ -294,7 +295,7 @@ function tick() {
 function menage_() {
   const p = PropertiesService.getScriptProperties(), limite = jour_(new Date(Date.now() - 10 * 86400000));
   Object.keys(p.getProperties()).forEach(function (k) {
-    const m = /^fait_\w+?_(\d{4}-\d{2}-\d{2})/.exec(k);
+    const m = /^(?:fait_\w+?_|LOT_IMPORTE_)(\d{4}-\d{2}-\d{2})/.exec(k);
     if (m && m[1] < limite) p.deleteProperty(k);
   });
 }
@@ -354,6 +355,9 @@ function controlerLot_(j) {
 function importerLot_(j) {
   const txt = lireDepot_('data/lots/' + j + '.json', 'lots');
   if (txt === null) return false;
+  const empreinte = Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, txt));
+  if (prop_('LOT_IMPORTE_' + j, '') === empreinte) return true;
+  setProp_('LOT_IMPORTE_' + j, empreinte);
   let lot;
   try { lot = JSON.parse(txt); } catch (e) { notifier_('⚠️ Lot du ' + j + ' illisible (JSON invalide). Rien n\'est importé.'); return true; }
   importerDonneesLot_(lot, false);

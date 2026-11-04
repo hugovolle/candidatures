@@ -98,10 +98,13 @@ function monde(options) {
     base64Decode: (s) => Buffer.from(s, 'base64'),
     newBlob: (b) => ({ getDataAsString: () => Buffer.from(b).toString('utf8') }),
     Charset: { UTF_8: 'UTF-8' },
+    DigestAlgorithm: { MD5: 'md5' },
+    computeDigest: (alg, s) => [...require('crypto').createHash('md5').update(s).digest()],
   };
   const ScriptApp = { getService: () => ({ getUrl: () => 'https://script.google.test/page' }), getProjectTriggers: () => [], deleteTrigger() {}, newTrigger: () => ({ timeBased: () => ({ everyMinutes: () => ({ create() {} }) }) }) };
   const Session = { getEffectiveUser: () => ({ getEmail: () => 'hugo.volle.da@gmail.com' }) };
 
+  Utilities.base64Encode = (s) => Buffer.from(Array.isArray(s) ? Buffer.from(s) : Buffer.from(s, 'utf8')).toString('base64');
   const ctx = vm.createContext({ Date: FausseDate, Math, JSON, String, Number, Object, Array, Set, Map, RegExp, Error, isNaN, console,
     SpreadsheetApp, PropertiesService, CacheService, LockService, UrlFetchApp, GmailApp, Gmail, Utilities, ScriptApp, Session, HtmlService: {} });
   vm.runInContext(lireFichier('moteur/regles.js') + '\n' + lireFichier('moteur/apps-script/Code.js'), ctx);
@@ -188,6 +191,7 @@ test('garde-fous à l\'import : liste noire, motif interdit, doublon', () => {
   assert.equal(l[2].statut, 'a_valider');
   w.derouler(10, 15, 10, 15);
   assert.equal(w.lignes().length, 3, 'un lot relu n\'est jamais réimporté');
+  assert.equal(w.discord.filter((d) => d.includes('Lot du')).length, 1, 'une seule notification pour un même lot');
 });
 
 test('sans lien de portfolio, rien ne part même en mode réel', () => {
