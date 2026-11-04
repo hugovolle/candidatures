@@ -197,9 +197,13 @@ function installer() {
 
   ScriptApp.getProjectTriggers().forEach(function (t) { ScriptApp.deleteTrigger(t); });
   ScriptApp.newTrigger('tick').timeBased().everyMinutes(5).create();
+  // Valeurs non secrètes posées par défaut : il ne reste à saisir que les
+  // trois secrets (GITHUB_TOKEN, DISCORD_WEBHOOK, URL_PORTFOLIO).
   if (!prop_('MODE', '')) setProp_('MODE', 'simulation');
+  if (!prop_('GITHUB_DEPOT', '')) setProp_('GITHUB_DEPOT', 'hugovolle/candidatures');
+  if (!prop_('LIEN_ROUTINE', '')) setProp_('LIEN_ROUTINE', 'https://claude.ai/code/routines/trig_01D1JZ7fL44yia5QBF5S3xgY');
 
-  const manquants = ['GITHUB_DEPOT', 'GITHUB_TOKEN', 'DISCORD_WEBHOOK'].filter(function (k) { return !prop_(k, ''); });
+  const manquants = ['GITHUB_TOKEN', 'DISCORD_WEBHOOK', 'URL_PORTFOLIO'].filter(function (k) { return !prop_(k, ''); });
   journal_('info', 'installation', 'Déclencheur toutes les 5 min créé. Mode : ' + prop_('MODE') + (manquants.length ? '. Propriétés manquantes : ' + manquants.join(', ') : ''));
   return manquants.length ? 'Propriétés manquantes : ' + manquants.join(', ') : 'Installation terminée (mode ' + prop_('MODE') + ').';
 }

@@ -4,8 +4,9 @@ Créées sur claude.ai/code/routines (ou avec `/schedule`), sur le dépôt GitHu
 privé `candidatures`, environnement cloud avec accès réseau **Complet**
 (l'éclaireur et l'enquêteur lisent le web).
 
-Les cron sont écrits avec le préfixe `CRON_TZ=Europe/Paris` : l'heure de Paris
-est respectée été comme hiver.
+Les cron sont en **heure UTC** (format exigé par l'API). Ils sont calés pour
+que le lot soit prêt bien avant 9h30 en toute saison : 05h07 UTC = 6h07 en
+hiver, 7h07 en été.
 
 Modèle conseillé : le plus capable disponible sur l'abonnement pour le lot
 du jour (la qualité des approches est tout l'enjeu), un modèle plus léger
@@ -16,8 +17,10 @@ suffit pour le bilan.
 ## 1. Lot du jour
 
 - **Nom** : `Candidatures — lot du jour`
-- **Planification** : `CRON_TZ=Europe/Paris 7 7 * * 1-5` (7h07, jours ouvrés ;
-  la skill s'arrête d'elle-même les jours fériés)
+- **Identifiant** : `trig_01D1JZ7fL44yia5QBF5S3xgY`
+  (https://claude.ai/code/routines/trig_01D1JZ7fL44yia5QBF5S3xgY)
+- **Planification** : `7 5 * * 1-5` UTC (6h07 l'hiver, 7h07 l'été, jours
+  ouvrés ; la skill s'arrête d'elle-même les jours fériés)
 - **Prompt** :
 
 ```
@@ -40,7 +43,8 @@ Termine par un résumé de 3 lignes.
 ## 2. Bilan de la semaine
 
 - **Nom** : `Candidatures — bilan hebdo`
-- **Planification** : `CRON_TZ=Europe/Paris 7 19 * * 0` (dimanche 19h07)
+- **Identifiant** : `trig_0192TwQqLcLzLYwfDNouJZ39`
+- **Planification** : `7 18 * * 0` UTC (dimanche 19h07 l'hiver, 20h07 l'été)
 - **Prompt** :
 
 ```
