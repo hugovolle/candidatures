@@ -48,14 +48,33 @@ function journal_(niveau, evenement, detail) {
   feuille_(ONGLET.journal).appendRow([iso_(new Date()), niveau, evenement, String(detail || '').slice(0, 45000)]);
 }
 
+/**
+ * Prévient Hugo. Discord d'abord ; si Discord refuse (il bloque souvent les
+ * serveurs de Google : erreur 429 / 1015), repli automatique sur un email à
+ * soi-même, pour qu'aucune alerte ne se perde.
+ */
 function notifier_(texte) {
   const url = prop_('DISCORD_WEBHOOK', '');
   const prefixe = modeReel_() ? '' : '🧪 [SIMULATION] ';
-  if (!url) { journal_('info', 'notification (pas de webhook)', texte); return; }
   const contenu = (prefixe + texte).slice(0, 1990);
-  const r = UrlFetchApp.fetch(url, { method: 'post', contentType: 'application/json', payload: JSON.stringify({ content: contenu }), muteHttpExceptions: true });
-  setProp_('DERNIER_DISCORD', iso_(new Date()) + ' HTTP ' + r.getResponseCode());
-  if (r.getResponseCode() >= 300) journal_('erreur', 'Discord', r.getResponseCode() + ' ' + r.getContentText().slice(0, 300));
+  if (url) {
+    try {
+      const r = UrlFetchApp.fetch(url, { method: 'post', contentType: 'application/json', payload: JSON.stringify({ content: contenu }), muteHttpExceptions: true });
+      setProp_('DERNIER_DISCORD', iso_(new Date()) + ' HTTP ' + r.getResponseCode());
+      if (r.getResponseCode() < 300) return;
+      journal_('erreur', 'Discord', r.getResponseCode() + ' ' + r.getContentText().slice(0, 300));
+    } catch (e) { journal_('erreur', 'Discord', e.message); }
+  }
+  notifierParEmail_(contenu);
+}
+
+function notifierParEmail_(contenu) {
+  try {
+    const moi = Session.getEffectiveUser().getEmail();
+    const premiere = contenu.split('\n')[0].replace(/\*\*/g, '').slice(0, 90);
+    GmailApp.sendEmail(moi, '[Candidatures] ' + premiere, contenu.replace(/\*\*/g, ''), { name: 'Moteur candidatures' });
+    setProp_('DERNIER_EMAIL_ALERTE', iso_(new Date()));
+  } catch (e) { journal_('erreur', 'alerte par email', e.message); }
 }
 
 function urlPage_() { try { return ScriptApp.getService().getUrl() || ''; } catch (e) { return ''; } }
@@ -240,6 +259,7 @@ function tick() {
     if (h >= '18:00' && !fait_('export_' + j)) { exporterSuivi_(); marquer_('export_' + j); }
     if (maintenant.getDay() === 1 && h >= '09:00' && !fait_('hebdo_' + j)) { publierBilanHebdo_(maintenant); marquer_('hebdo_' + j); }
     if (h >= '23:00' && !fait_('menage_' + j)) { menage_(); marquer_('menage_' + j); }
+    if (!fait_('autotest_notification_v2')) { marquer_('autotest_notification_v2'); notifier_('✅ Moteur candidatures connecté. Les alertes t\'arriveront ici (ou par email si Discord est indisponible).'); }
     if (!fait_('diag_' + j + '_' + h.slice(0, 2))) { marquer_('diag_' + j + '_' + h.slice(0, 2)); try { diagnostiquer(); } catch (e) { journal_('erreur', 'diagnostic', e.message); } }
   } catch (e) {
     journal_('erreur', 'tick', e.stack || e.message);
@@ -276,9 +296,10 @@ function etatMoteur_() {
       GITHUB_TOKEN: p('GITHUB_TOKEN') ? (/^(github_pat_|ghp_)/.test(p('GITHUB_TOKEN')) ? 'présent, format GitHub' : 'présent, FORMAT INATTENDU') : 'absent',
       DISCORD_WEBHOOK: p('DISCORD_WEBHOOK') ? (/^https:\/\/(ptb\.|canary\.)?discord(app)?\.com\/api\/webhooks\/\d+\/[\w-]+$/.test(p('DISCORD_WEBHOOK').trim()) ? 'présent, format webhook' : 'présent, FORMAT INATTENDU (pas une URL de webhook)') : 'absent',
       URL_PORTFOLIO: p('URL_PORTFOLIO') ? (/^https:\/\//.test(p('URL_PORTFOLIO')) ? 'présent' : 'présent, FORMAT INATTENDU') : 'absent',
-      autres: Object.keys(PropertiesService.getScriptProperties().getProperties()).filter(function (k) { return !/^fait_/.test(k) && ['MODE', 'GITHUB_DEPOT', 'LIEN_ROUTINE', 'GITHUB_TOKEN', 'DISCORD_WEBHOOK', 'URL_PORTFOLIO', 'DERNIER_DISCORD', 'DATE_DEBUT', 'DIAG_EMPREINTE'].indexOf(k) < 0; }),
+      autres: Object.keys(PropertiesService.getScriptProperties().getProperties()).filter(function (k) { return !/^fait_/.test(k) && ['MODE', 'GITHUB_DEPOT', 'LIEN_ROUTINE', 'GITHUB_TOKEN', 'DISCORD_WEBHOOK', 'URL_PORTFOLIO', 'DERNIER_DISCORD', 'DERNIER_EMAIL_ALERTE', 'DATE_DEBUT', 'DIAG_EMPREINTE'].indexOf(k) < 0; }),
     },
     dernier_discord: p('DERNIER_DISCORD') || 'jamais',
+    dernier_email_alerte: p('DERNIER_EMAIL_ALERTE') || 'jamais',
     declencheurs: ScriptApp.getProjectTriggers().map(function (t) { return t.getHandlerFunction(); }),
     approches: lignes_().length,
     journal: v.slice(Math.max(1, v.length - 25)).map(function (r) { return [r[0], r[1], r[2], String(r[3]).replace(/https:\/\/discord[^\s]+/g, '[webhook]').slice(0, 400)]; }),
@@ -288,7 +309,7 @@ function etatMoteur_() {
 /** Publie le diagnostic s'il a changé. Appelé chaque heure par tick, ou à la main. */
 function diagnostiquer() {
   const etat = etatMoteur_();
-  const empreinte = JSON.stringify([etat.proprietes, etat.dernier_discord, etat.journal.slice(-5), etat.approches]);
+  const empreinte = JSON.stringify([etat.proprietes, etat.dernier_discord, etat.dernier_email_alerte, etat.journal.slice(-5), etat.approches]);
   if (empreinte === prop_('DIAG_EMPREINTE', '')) return 'Diagnostic inchangé.';
   ecrireDepot_('data/diagnostic.json', 'lots', JSON.stringify(etat, null, 2), 'Diagnostic du moteur');
   setProp_('DIAG_EMPREINTE', empreinte);

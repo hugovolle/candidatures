@@ -66,7 +66,10 @@ function monde(options) {
   const reponse = (code, corps) => ({ getResponseCode: () => code, getContentText: () => corps });
   const UrlFetchApp = { fetch: (url, o) => {
     o = o || {};
-    if (url.startsWith('https://discord.test')) { discord.push(JSON.parse(o.payload).content); return reponse(204, ''); }
+    if (url.startsWith('https://discord.test')) {
+      if (options.discordCode) return reponse(options.discordCode, 'error code: 1015');
+      discord.push(JSON.parse(o.payload).content); return reponse(204, '');
+    }
     const m = /contents\/([^?]+)(?:\?ref=(.+))?$/.exec(url);
     if (o.method === 'put') { const b = JSON.parse(o.payload); depot[b.branch][m[1]] = Buffer.from(b.content, 'base64').toString('utf8'); return reponse(200, '{}'); }
     const branche = m[2] || 'main', contenu = depot[branche][m[1]];
@@ -75,7 +78,7 @@ function monde(options) {
   } };
 
   // --- Gmail ---
-  const envoyes = [], fils = {};
+  const envoyes = [], fils = {}, alertesEmail = [];
   const GmailApp = {
     createDraft: (a, objet, corps) => ({ send: () => {
       const id = 'fil-' + (envoyes.length + 1);
@@ -84,6 +87,7 @@ function monde(options) {
     } }),
     getThreadById: (id) => ({ getMessages: () => fils[id] || [] }),
     search: () => [],
+    sendEmail: (a, objet, corps) => { alertesEmail.push({ a, objet, corps }); },
   };
   const Gmail = { Users: { Messages: { send: (r) => { envoyes.push({ relance: true, threadId: r.threadId, quand: new RealDate(maintenant) }); } } } };
   const Utilities = {
@@ -102,7 +106,7 @@ function monde(options) {
   vm.runInContext(lireFichier('moteur/regles.js') + '\n' + lireFichier('moteur/apps-script/Code.js'), ctx);
 
   return {
-    ctx, feuilles, proprietes, depot, discord, envoyes, fils,
+    ctx, feuilles, proprietes, depot, discord, envoyes, fils, alertesEmail,
     allerA: (h, m, jour) => { maintenant = new RealDate(2026, 10, jour || 4, h, m); },
     /** Fait tourner tick() toutes les 5 minutes entre deux heures. */
     derouler: function (h1, m1, h2, m2, jour) {
@@ -243,4 +247,12 @@ test('week-end : aucune action d\'envoi', () => {
   lotDuJour(w, 2, 7);
   w.derouler(9, 0, 17, 0, 7);
   assert.equal(w.lignes().length, 0);
+});
+
+test('Discord refuse (429 / 1015) : l\'alerte part par email à Hugo', () => {
+  const w = monde({ discordCode: 429 });
+  w.ctx.installer();
+  lotDuJour(w, 1);
+  w.derouler(10, 10, 10, 10);
+  assert.ok(w.alertesEmail.some((m) => m.a === 'hugo.volle.da@gmail.com' && m.objet.startsWith('[Candidatures]') && m.corps.includes('à valider')));
 });
