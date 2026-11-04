@@ -1,5 +1,5 @@
 {
-  "genere_le": "2026-11-04T19:01:19",
+  "genere_le": "2026-11-04T20:01:18",
   "mode": "simulation",
   "proprietes": {
     "GITHUB_DEPOT": "hugovolle/candidatures",
@@ -11,7 +11,7 @@
       "DERNIER_EMAIL_ALERTE"
     ]
   },
-  "dernier_discord": "2026-11-04T18:56:15 HTTP 204",
+  "dernier_discord": "2026-11-04T19:06:15 HTTP 204",
   "messages_discord_en_attente": 0,
   "declencheurs": [
     "tick"
