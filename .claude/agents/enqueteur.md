@@ -44,7 +44,20 @@ réponds explicitement :
 - poste dans la filière boissons et alcool à Lyon ou en Rhône-Alpes ?
 - l'entreprise est-elle cliente, concurrente ou partenaire connue de Camden ?
 
-Au moindre « peut-être », la cible est écartée.
+**LinkedIn bloque les robots** (erreur 999) : n'essaie pas d'ouvrir les
+profils. Vérifie le parcours autrement, dans cet ordre :
+1. recherche web `"Prénom Nom" linkedin` puis `"Prénom Nom" <entreprise>` :
+   les extraits des résultats montrent les postes actuels et passés ;
+2. page équipe du site, presse, conférences, Welcome to the Jungle, Malt ;
+3. recherche `"Prénom Nom" Camden` et `"Prénom Nom" Distilleurs`.
+
+La vérification est **concluante** si au moins deux sources indépendantes
+décrivent le parcours sans aucun lien avec Camden ou la filière boissons
+lyonnaise. Écris dans `verification_exclusions` les sources utilisées. Hugo
+relit chaque approche avant envoi : il est le dernier contrôle, pas le seul.
+
+Au moindre « peut-être » (un lien trouvé, ou aucune source sur le parcours),
+la cible est écartée.
 
 ## Ce que tu rends
 
