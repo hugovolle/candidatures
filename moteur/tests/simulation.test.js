@@ -110,7 +110,8 @@ function monde(options) {
   Utilities.base64Encode = (s) => Buffer.from(Array.isArray(s) ? Buffer.from(s) : Buffer.from(s, 'utf8')).toString('base64');
   const ctx = vm.createContext({ Date: FausseDate, Math, JSON, String, Number, Object, Array, Set, Map, RegExp, Error, isNaN, console,
     SpreadsheetApp, PropertiesService, CacheService, LockService, UrlFetchApp, GmailApp, Gmail, Utilities, ScriptApp, Session, HtmlService: {} });
-  vm.runInContext(lireFichier('moteur/regles.js') + '\n' + lireFichier('moteur/apps-script/Code.js'), ctx);
+  // Les tests vérifient le moteur actif, même quand il est en pause en production.
+  vm.runInContext(lireFichier('moteur/regles.js') + '\n' + lireFichier('moteur/apps-script/Code.js').replace('const EN_PAUSE = true;', 'const EN_PAUSE = false;'), ctx);
 
   return {
     ctx, feuilles, proprietes, depot, discord, cartes, envoyes, fils, alertesEmail, etat,

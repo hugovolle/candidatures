@@ -293,7 +293,15 @@ function testerAvecExemple() {
 
 // ---------- Boucle principale ----------
 
+/**
+ * Pause générale : à true, le moteur ne fait plus rien (ni import, ni envoi,
+ * ni notification). Mis en pause à la demande de Hugo le 05/11/2026.
+ * Pour reprendre : repasser à false, puis réactiver les deux routines.
+ */
+const EN_PAUSE = true;
+
 function tick() {
+  if (EN_PAUSE) return;
   const verrou = LockService.getScriptLock();
   if (!verrou.tryLock(20000)) return;
   try {
