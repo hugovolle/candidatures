@@ -1,0 +1,45 @@
+{
+  "date": "2026-11-05",
+  "genere_a": "2026-11-05T06:18:41+01:00",
+  "version_format": 1,
+  "taille_visee": 3,
+  "resume": "Lot vide. 7 offres collectées, 4 candidates enquêtées, 2 retenues par le stratège (Alma, H Company) puis rejetées par le censeur : postes basés à Paris (sur site ou 3 j/sem), hors critère full remote / hybride Lyon, et un fait non conforme à la source dans chaque message. 2 écartées par le stratège (Voodoo 48, Alan 64).",
+  "approches": [],
+  "ecartees": [
+    {
+      "entreprise": "Voodoo",
+      "motif": "score 48 : offre Creative Strategist du 02/07/2026 (plus de 3 mois, mise en ligne non confirmée), poste centré performance publicitaire mobile, aucun décideur ni email vérifié"
+    },
+    {
+      "entreprise": "Alan",
+      "motif": "score 64 (seuil 65) : offre Senior Brand Designer du 28/08/2026, écart de séniorité, décideur nommé (Jérémy Clédat, directeur créatif) mais ni LinkedIn ni email trouvés. Rattrapable si le texte de l'offre et le LinkedIn de J. Clédat sont obtenus"
+    },
+    {
+      "entreprise": "Voodoo (Lead Creative Manager, Art Director)",
+      "motif": "éclaireur : sur site, management de 6 personnes ou offre de 6 mois ; une seule approche par entreprise"
+    },
+    {
+      "entreprise": "Vestiaire Collective",
+      "motif": "éclaireur : CDD de remplacement, poste impact/durabilité non créatif, aucun signal récent"
+    }
+  ],
+  "a_arbitrer": [
+    {
+      "entreprise": "Alma (almapay.com)",
+      "motif": "censeur : rejeté (note 5). CDI basé à Paris, sans full remote (2 semaines/an), alors que le message disait « en full remote » ; problème « une seule personne pour tout » non conforme à l'offre (équipe de brand designers). Score stratège 84 à recalculer (remote 0). Offre Brand Designer du 30/10/2026 avec chantier Brand AI System, manager nommé Antoine Coucoureux (email déduit antoine.coucoureux@almapay.com). Vigilance : ex-agences parisiennes (BETC, Monument, client Ricard), aucun lien Camden trouvé. Salaire non affiché, risque sous 45 k€. Si Hugo accepte Paris : une réécriture suivant les remarques du censeur. https://jobs.ashbyhq.com/alma/d52252b0-b8a1-4ac9-aa5e-34aef10199a3"
+    },
+    {
+      "entreprise": "H Company (hcompany.ai)",
+      "motif": "censeur : rejeté (note 7). Poste Brand Lead hybride 3 j/sem au bureau de Paris (ou Londres) + déplacements US, hors critère ; le message affirmait que le poste de CMO global était ouvert alors que l'offre est close (« no longer accepting applications »). Candidature seule (aucun décideur marketing vérifié). Si Hugo accepte Paris : réécriture sans le CMO, centrée sur le passage de l'image fondateurs/levée aux produits et résultats clients. https://jobs.ashbyhq.com/hcompany/c1c1c918-9693-427e-a5b0-833d96daa91e"
+    }
+  ],
+  "alertes": [
+    "portfolio_cv_url est vide dans config/quotas.toml : l'expéditeur refusera tout envoi tant que le lien du Portfolio & CV n'est pas renseigné.",
+    "Les 4 offres exploitables du jour sont toutes à Paris (sur site ou hybride) : aucune ne répond au critère full remote / hybride Lyon. Le vivier du collecteur est très parisien ; à élargir vers des entreprises remote-first.",
+    "Le stratège a noté le remote à 5 pour des postes à Paris au bureau ; le censeur a recalé ces cibles. À clarifier : un hybride Paris est-il acceptable pour Hugo ?",
+    "Marché caché : aucune levée ou recrutement marketing daté et sourcé trouvé ce matin (piste non vérifiée : Vocca, série A octobre 2026).",
+    "Collecteur : brevo et swile illisibles (timeout Lever).",
+    "Contrôle A11 partiel : la liste dure des formules bannies (~/Prospection/profil/ton-de-voix.md) est introuvable dans l'environnement cloud.",
+    "Montée en charge : date_debut vide, taille visée fixée à 3 (semaine 1)."
+  ]
+}
